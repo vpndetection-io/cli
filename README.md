@@ -203,6 +203,26 @@ $ vpndetection --session staging 45.83.91.1    # one command, without switching
 
 A key can also come from `--key` or the `VPNDETECTION_API_KEY` environment variable, in that order of precedence. The config file is written `0600` inside a `0700` directory.
 
+### Plan and usage
+
+```console
+$ vpndetection whoami
+key          mk_1************************abcd
+from         session default
+api          https://api.vpndetection.io
+org          85bb51e4-2eb6-4a31-8e4d-02ba8b98fe61
+
+plan         max
+fields       max tier
+
+used         412,908 of 5,000,000
+             [###                                     ] 8.3%
+hard limit   none; requests above the quota are billed as overage
+resets       2026-10-04T07:00:00Z (in 20d)
+```
+
+Also spelled `me` and `quota`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
+
 ### Databases
 
 The same classifications, published as files you host yourself. Access is granted by contract and needs a key carrying the `db.download` scope.
