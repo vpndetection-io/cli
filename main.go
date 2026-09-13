@@ -45,6 +45,8 @@ func main() {
 
 	var err error
 	switch detectCommand() {
+	case "myip":
+		err = cmdMyIP()
 	case "bulk":
 		err = cmdBulk()
 	case "signup":
@@ -81,7 +83,7 @@ func main() {
 
 // subcommands is every command name, including aliases.
 var subcommands = map[string]bool{
-	"bulk": true, "signup": true, "login": true, "init": true, "logout": true,
+	"myip": true, "bulk": true, "signup": true, "login": true, "init": true, "logout": true,
 	"session": true, "sessions": true, "whoami": true, "me": true, "quota": true,
 	"database": true, "db": true, "cache": true, "config": true,
 	"completion": true, "version": true, "vsn": true, "v": true,

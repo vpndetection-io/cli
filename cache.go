@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	vpndetection "github.com/vpndetection-io/sdk-go"
+	vpndetection "github.com/vpndetection-io/sdk-go/v3"
 	"go.etcd.io/bbolt"
 )
 

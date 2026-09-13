@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	vpndetection "github.com/vpndetection-io/sdk-go"
+	vpndetection "github.com/vpndetection-io/sdk-go/v3"
 )
 
 // Client is the SDK client plus this CLI's own disk cache.
@@ -135,7 +135,7 @@ func (c *Client) LookupBatch(
 }
 
 // Database is the licensed-dataset half of the API.
-func (c *Client) Database() *vpndetection.Database { return c.api.Database }
+func (c *Client) Database() *vpndetection.DatabaseAPI { return c.api.Database }
 
 // requireKey refuses a command that cannot work unauthenticated, naming how to
 // fix it rather than reporting a 401 from three layers down.

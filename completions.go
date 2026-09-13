@@ -46,6 +46,7 @@ func sessionNames() complete.Predictor {
 var completions = &complete.Command{
 	Sub: map[string]*complete.Command{
 		"bulk":     {Flags: outputFlags()},
+		"myip":     {Flags: outputFlags()},
 		"database": databaseCompletions,
 		"db":       databaseCompletions,
 		"login":    loginCompletions,

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	vpndetection "github.com/vpndetection-io/sdk-go"
+	vpndetection "github.com/vpndetection-io/sdk-go/v3"
 )
 
 func printHelpDatabase() {
@@ -127,7 +127,7 @@ func cmdDatabase() error {
 	}
 }
 
-func dbList(ctx context.Context, db *vpndetection.Database, asJSON bool) error {
+func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) error {
 	items, err := db.List(ctx)
 	if err != nil {
 		return explain(err)
@@ -152,7 +152,7 @@ func dbList(ctx context.Context, db *vpndetection.Database, asJSON bool) error {
 
 // licenceTerm renders when a licence ends, which is the one thing a holder has to act
 // on. An empty string means there is nothing to act on.
-func licenceTerm(d vpndetection.LicensedDataset) string {
+func licenceTerm(d vpndetection.Database) string {
 	switch {
 	case !d.InTerm:
 		return "lapsed"
@@ -165,7 +165,7 @@ func licenceTerm(d vpndetection.LicensedDataset) string {
 	}
 }
 
-func dbMetadata(ctx context.Context, db *vpndetection.Database, id string, asJSON bool) error {
+func dbMetadata(ctx context.Context, db *vpndetection.DatabaseAPI, id string, asJSON bool) error {
 	meta, err := db.Metadata(ctx, id)
 	if err != nil {
 		return explain(err)
@@ -176,7 +176,7 @@ func dbMetadata(ctx context.Context, db *vpndetection.Database, id string, asJSO
 	return emitJSON(meta)
 }
 
-func dbChecksum(ctx context.Context, db *vpndetection.Database, id, format string, asJSON bool) error {
+func dbChecksum(ctx context.Context, db *vpndetection.DatabaseAPI, id, format string, asJSON bool) error {
 	sums, err := db.Checksums(ctx, id, vpndetection.Format(format))
 	if err != nil {
 		return explain(err)
@@ -197,7 +197,7 @@ func dbChecksum(ctx context.Context, db *vpndetection.Database, id, format strin
 	return nil
 }
 
-func dbURL(ctx context.Context, db *vpndetection.Database, id, format string) error {
+func dbURL(ctx context.Context, db *vpndetection.DatabaseAPI, id, format string) error {
 	url, err := db.DownloadURL(ctx, id, vpndetection.Format(format))
 	if err != nil {
 		return explain(err)
@@ -206,7 +206,7 @@ func dbURL(ctx context.Context, db *vpndetection.Database, id, format string) er
 	return nil
 }
 
-func dbDownloads(ctx context.Context, db *vpndetection.Database, limit int, asJSON bool) error {
+func dbDownloads(ctx context.Context, db *vpndetection.DatabaseAPI, limit int, asJSON bool) error {
 	items, err := db.Downloads(ctx, limit)
 	if err != nil {
 		return explain(err)
@@ -236,7 +236,7 @@ func dbDownloads(ctx context.Context, db *vpndetection.Database, limit int, asJS
 }
 
 func dbDownload(
-	ctx context.Context, db *vpndetection.Database,
+	ctx context.Context, db *vpndetection.DatabaseAPI,
 	id, format, out string, toStdout, noVerify bool,
 ) error {
 	f := vpndetection.Format(format)
