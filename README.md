@@ -11,7 +11,7 @@ is_vpn    true
 
 No account needed: the free tier answers `ip` and `is_vpn`. A key widens the answer and raises the allowance.
 
-## Install
+## Getting Started
 
 **macOS**
 
