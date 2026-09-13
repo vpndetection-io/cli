@@ -6,47 +6,71 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # So a flaky GitHub API does not cost a version number. Everything below is
+  # idempotent, and re-tagging to retry a transient 500 is worse than re-running.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to release, e.g. v0.2.0
+        required: true
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  release:
+  # Its own job so the packaging below does not depend on the GitHub release API
+  # being healthy. That API returned 500 for twenty minutes on 0.2.0, and because
+  # every other job hung off `needs: release`, the container image, the tap, the
+  # Chocolatey package and the winget PR were all skipped over a problem that had
+  # nothing to do with any of them.
+  version:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.vsn.outputs.version }}
+      tag: ${{ steps.vsn.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Check the tag against the version in main.go
+        id: vsn
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          src="$(grep -m1 'var version = ' main.go | cut -d'"' -f2)"
+          if [ "${tag#v}" != "$src" ] ; then
+            echo "tag ${tag} does not match main.go version ${src}" >&2
+            exit 1
+          fi
+          echo "version=${src}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.tag }}
       - uses: actions/setup-go@v7
         with:
           go-version: '1.25'
 
-      - name: Check the tag against the version in main.go
-        id: vsn
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          src="$(grep -m1 'var version = ' main.go | cut -d'"' -f2)"
-          if [ "$tag" != "$src" ] ; then
-            echo "tag ${GITHUB_REF_NAME} does not match main.go version ${src}" >&2
-            exit 1
-          fi
-          echo "version=${src}" >> "$GITHUB_OUTPUT"
-
       - run: go test ./...
 
       - name: Build and package
-        run: ./scripts/build-archive-all.sh "${{ steps.vsn.outputs.version }}"
+        run: ./scripts/build-archive-all.sh "${{ needs.version.outputs.version }}"
 
       - name: Stamp the installers with this version
         run: |
-          vsn="${{ steps.vsn.outputs.version }}"
+          vsn="${{ needs.version.outputs.version }}"
           sed -i "s/^VSN=\"\${VSN:-.*}\"/VSN=\"\${VSN:-${vsn}}\"/" dist/macos.sh dist/deb.sh
           sed -i "s/else { \"[0-9.]*\" }/else { \"${vsn}\" }/" dist/windows.ps1
           cp dist/macos.sh dist/deb.sh dist/windows.ps1 build/
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.version.outputs.tag }}
           files: |
             build/*.tar.gz
             build/*.zip
@@ -57,13 +81,15 @@ jobs:
           generate_release_notes: true
 
   docker:
-    needs: release
+    needs: version
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.tag }}
       - uses: docker/login-action@v3
         with:
           # ghcr rather than Docker Hub: same org, no second account to hold,
@@ -82,22 +108,22 @@ jobs:
           # container was not, which is the kind of difference nobody notices
           # until they are reading a bug report.
           build-args: |
-            VERSION=${{ needs.release.outputs.version }}
+            VERSION=${{ needs.version.outputs.version }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/vpndetection-io/cli:${{ needs.release.outputs.version }}
+            ghcr.io/vpndetection-io/cli:${{ needs.version.outputs.version }}
             ghcr.io/vpndetection-io/cli:latest
 
   homebrew:
-    needs: release
+    needs: [version, release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Update the tap formula
         env:
           TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
-          VSN: ${{ needs.release.outputs.version }}
+          VSN: ${{ needs.version.outputs.version }}
         # Skipped rather than failed when the token is absent, so a release
         # still completes on a fork or before the tap exists.
         run: |
@@ -108,26 +134,26 @@ jobs:
           ./scripts/update-homebrew.sh "$VSN"
 
   winget:
-    needs: release
+    needs: [version, release]
     runs-on: windows-latest
     steps:
       - uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: Mslm.VPNDetection
           installers-regex: '_windows_\w+\.zip$'
-          version: ${{ needs.release.outputs.version }}
+          version: ${{ needs.version.outputs.version }}
           token: ${{ secrets.WINGET_TOKEN }}
         continue-on-error: true
 
   chocolatey:
-    needs: release
+    needs: [version, release]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
       - name: Push the Chocolatey package
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
-          VSN: ${{ needs.release.outputs.version }}
+          VSN: ${{ needs.version.outputs.version }}
         shell: pwsh
         run: |
           if (-not $env:CHOCO_API_KEY) {
