@@ -11,7 +11,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VSN="${1:?usage: update-homebrew.sh <version>}"
-TAP_TOKEN="${TAP_TOKEN:?a token with push access to the tap is required}"
+TAP_DEPLOY_KEY="${TAP_DEPLOY_KEY:?a deploy key with push access to the tap is required}"
 REPO="vpndetection-io/homebrew-tap"
 BASE="https://github.com/vpndetection-io/cli/releases/download/v${VSN}"
 
@@ -29,7 +29,13 @@ LINUX_AMD="$(sha_of "vpndetection_${VSN}_linux_amd64.tar.gz")"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-git clone -q "https://x-access-token:${TAP_TOKEN}@github.com/${REPO}.git" "$TMP/tap"
+# A deploy key, because GitHub has no API to mint a token: it reaches the tap
+# and nothing else in the org, which a personal access token would not.
+printf '%s\n' "$TAP_DEPLOY_KEY" > "$TMP/key"
+chmod 600 "$TMP/key"
+export GIT_SSH_COMMAND="ssh -i $TMP/key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+git clone -q "git@github.com:${REPO}.git" "$TMP/tap"
 
 mkdir -p "$TMP/tap/Formula"
 sed -e "s|@VSN@|${VSN}|g" \
@@ -40,11 +46,14 @@ sed -e "s|@VSN@|${VSN}|g" \
     homebrew/vpndetection.rb.tmpl > "$TMP/tap/Formula/vpndetection.rb"
 
 cd "$TMP/tap"
-if git diff --quiet ; then
+# `git diff` reads tracked files only, so a tap with no formula yet reports no
+# change and this would exit claiming success having pushed nothing.
+git add -A Formula
+if git diff --cached --quiet ; then
     echo "==> Formula already at ${VSN}; nothing to do."
     exit 0
 fi
 git -c user.name="vpndetection-bot" -c user.email="support@vpndetection.io" \
-    commit -qam "vpndetection ${VSN}"
+    commit -qm "vpndetection ${VSN}"
 git push -q origin HEAD
 echo "==> ${REPO} updated to ${VSN}"
