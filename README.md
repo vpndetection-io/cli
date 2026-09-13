@@ -221,7 +221,7 @@ hard limit   none; requests above the quota are billed as overage
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
 
-Also spelled `me` and `quota`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
+Also spelled `myaccount` and `quota`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
 
 ### Databases
 
@@ -289,7 +289,7 @@ Note that as long as the `COMP_LINE` environment variable is provided to the bin
 
 How much you get back per lookup depends on the plan behind your key. See the [plans](https://vpndetection.io/pricing) for what each includes. All examples in this document use a key with everything enabled.
 
-**A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served and names the rest at the end; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders them all.
+**A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
 
 ## Caching
 
@@ -299,6 +299,7 @@ Answers are cached on disk, so looking the same address up twice costs one reque
 vpndetection cache info
 vpndetection cache clear
 vpndetection --nocache 45.83.91.1
+vpndetection config list
 vpndetection config cache=disable cache_ttl=24h
 ```
 
