@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    # A tag is what publishes, so running CI on it cannot block a bad release -
+    # but it turns one into a red run and an email rather than silence.
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # One version: x/term and x/sys declare go 1.26 from their latest
+        # releases, so the module floor is 1.25 and there is no older toolchain
+        # this builds on. See the note in go.mod.
+        go: ['1.25']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ] ; then
+            echo "gofmt needed on:" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  # The release builds 22 targets from one machine, so a cross-compilation
+  # failure has to surface before the tag rather than during it.
+  cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.25'
+      - run: ./scripts/build-all-platforms.sh 0.0.0-ci

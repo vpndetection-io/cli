@@ -1,0 +1,130 @@
+name: Release
+
+# A v* tag is the release. The version in main.go is the source of truth for
+# what gets built; the tag is checked against it below, because the tag only
+# triggers this and a mismatch would otherwise ship the wrong number.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.vsn.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.25'
+
+      - name: Check the tag against the version in main.go
+        id: vsn
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          src="$(grep -m1 'var version = ' main.go | cut -d'"' -f2)"
+          if [ "$tag" != "$src" ] ; then
+            echo "tag ${GITHUB_REF_NAME} does not match main.go version ${src}" >&2
+            exit 1
+          fi
+          echo "version=${src}" >> "$GITHUB_OUTPUT"
+
+      - run: go test ./...
+
+      - name: Build and package
+        run: ./scripts/build-archive-all.sh "${{ steps.vsn.outputs.version }}"
+
+      - name: Stamp the installers with this version
+        run: |
+          vsn="${{ steps.vsn.outputs.version }}"
+          sed -i "s/^VSN=\"\${VSN:-.*}\"/VSN=\"\${VSN:-${vsn}}\"/" dist/macos.sh dist/deb.sh
+          sed -i "s/else { \"[0-9.]*\" }/else { \"${vsn}\" }/" dist/windows.ps1
+          cp dist/macos.sh dist/deb.sh dist/windows.ps1 build/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/*.tar.gz
+            build/*.zip
+            build/*.deb
+            build/macos.sh
+            build/deb.sh
+            build/windows.ps1
+          generate_release_notes: true
+
+  docker:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v3
+        with:
+          # ghcr rather than Docker Hub: same org, no second account to hold,
+          # and the token is the one this workflow already has.
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/vpndetection-io/cli:${{ needs.release.outputs.version }}
+            ghcr.io/vpndetection-io/cli:latest
+
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Update the tap formula
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          VSN: ${{ needs.release.outputs.version }}
+        # Skipped rather than failed when the token is absent, so a release
+        # still completes on a fork or before the tap exists.
+        run: |
+          if [ -z "$TAP_TOKEN" ] ; then
+            echo "TAP_TOKEN not set; skipping the Homebrew tap update"
+            exit 0
+          fi
+          ./scripts/update-homebrew.sh "$VSN"
+
+  winget:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: Mslm.VPNDetection
+          installers-regex: '_windows_\w+\.zip$'
+          version: ${{ needs.release.outputs.version }}
+          token: ${{ secrets.WINGET_TOKEN }}
+        continue-on-error: true
+
+  chocolatey:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Push the Chocolatey package
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+          VSN: ${{ needs.release.outputs.version }}
+        shell: pwsh
+        run: |
+          if (-not $env:CHOCO_API_KEY) {
+            Write-Host "CHOCO_API_KEY not set; skipping"
+            exit 0
+          }
+          ./scripts/update-chocolatey.ps1 -Version $env:VSN -ApiKey $env:CHOCO_API_KEY

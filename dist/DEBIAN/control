@@ -1,0 +1,11 @@
+Package: vpndetection
+Version: 0.0.0
+Section: net
+Priority: optional
+Architecture: amd64
+Maintainer: Mslm Dev <support@vpndetection.io>
+Homepage: https://vpndetection.io
+Description: Official CLI for the VPNDetection API
+ Look up what an IP address is - a VPN exit, a hosting or CDN range, a Tor
+ node, a privacy relay, or a residential, datacenter or mobile proxy - one
+ address at a time or in bulk, and download the licensed datasets.

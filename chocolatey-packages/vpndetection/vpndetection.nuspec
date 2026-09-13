@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>vpndetection</id>
+    <version>0.0.0</version>
+    <packageSourceUrl>https://github.com/vpndetection-io/cli</packageSourceUrl>
+    <owners>Mslm Dev</owners>
+    <title>VPNDetection CLI</title>
+    <authors>Mslm Dev</authors>
+    <projectUrl>https://vpndetection.io</projectUrl>
+    <licenseUrl>https://github.com/vpndetection-io/cli/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/vpndetection-io/cli</projectSourceUrl>
+    <docsUrl>https://vpndetection.io/docs/integrations/cli</docsUrl>
+    <bugTrackerUrl>https://github.com/vpndetection-io/cli/issues</bugTrackerUrl>
+    <tags>vpn proxy tor cdn hosting ip geolocation cli</tags>
+    <summary>Official CLI for the VPNDetection API</summary>
+    <description>
+Look up what an IP address is - a VPN exit, a hosting or CDN range, a Tor node,
+a privacy relay, or a residential, datacenter or mobile proxy - one address at a
+time or in bulk, and download the licensed datasets.
+
+Works with no account: the free tier answers `ip` and `is_vpn`.
+    </description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
