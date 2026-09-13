@@ -15,15 +15,15 @@ func printHelpSession() {
 
 Description:
   Named credentials. Each holds an API key and, optionally, the API it talks to,
-  so one machine can hold several organizations' keys, or staging alongside
-  production, and switch between them without logging in again.
+  so one machine can hold several organizations' keys and switch between them
+  without logging in again.
 
   Create one with '%[1]s login --session <name>'.
 
 Examples:
   $ %[1]s session                    # same as 'session list'
   $ %[1]s session use work
-  $ %[1]s session show staging
+  $ %[1]s session show acme
   $ %[1]s session rename work acme
   $ %[1]s session rm old
 

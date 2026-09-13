@@ -23,9 +23,9 @@ func TestCacheBucketSeparatesCredentials(t *testing.T) {
 		t.Error("the bucket is not stable for one key")
 	}
 
-	// Different API, different bucket: staging and production answer
-	// differently for the same address under the same key.
-	if cacheBucket("key-free", "https://api-staging.vpndetection.io") == free {
+	// Different API, different bucket: two deployments answer differently for
+	// the same address under the same key.
+	if cacheBucket("key-free", "https://api.example.com") == free {
 		t.Error("two deployments share a bucket")
 	}
 
@@ -46,13 +46,13 @@ func TestCacheBucketSeparatesCredentials(t *testing.T) {
 // The host is what distinguishes deployments, so the bucket has to survive a
 // base URL given with a path or a trailing slash.
 func TestCacheBucketNormalisesBaseURL(t *testing.T) {
-	a := cacheBucket("k", "https://api-staging.vpndetection.io")
-	b := cacheBucket("k", "https://api-staging.vpndetection.io/")
+	a := cacheBucket("k", "https://api.example.com")
+	b := cacheBucket("k", "https://api.example.com/")
 	if a != b {
 		t.Errorf("a trailing slash changed the bucket: %q vs %q", a, b)
 	}
-	if cacheBucket("k", "") == cacheBucket("k", "https://api-staging.vpndetection.io") {
-		t.Error("the default and staging share a bucket")
+	if cacheBucket("k", "") == cacheBucket("k", "https://api.example.com") {
+		t.Error("the default and another deployment share a bucket")
 	}
 }
 

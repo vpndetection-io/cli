@@ -18,8 +18,8 @@ var gConfig Config
 // Config is everything the CLI remembers between runs.
 //
 // Sessions are named credentials rather than one token, so a machine that talks
-// to more than one organization - or to staging and production - does not have
-// to re-authenticate to switch. Exactly one is active at a time.
+// to more than one organization, or to more than one deployment of the API,
+// does not have to re-authenticate to switch. Exactly one is active at a time.
 type Config struct {
 	// Version of this file's shape, so a future change can migrate rather than
 	// guess.
@@ -54,7 +54,7 @@ type Session struct {
 	Key string `json:"key"`
 
 	// BaseURL overrides the API this session talks to, which is what lets a
-	// `staging` session sit beside a production one.
+	// session on another deployment sit beside a production one.
 	BaseURL string `json:"base_url,omitempty"`
 
 	Created  time.Time `json:"created"`

@@ -186,20 +186,22 @@ Output formats are `--pretty`, `--json`, `--jsonl`, `--csv` and `--yaml`.
 
 ### Sessions
 
-Credentials are stored in named sessions, so one machine can hold several organizations' keys, or staging alongside production:
+Credentials are stored in named sessions, so one machine can hold several organizations' keys and switch between them without logging in again:
 
 ```console
 $ vpndetection login --session work
-$ vpndetection login --session staging --base-url https://api-staging.vpndetection.io
+$ vpndetection login --session acme --base-url https://api.example.com
 $ vpndetection session list
-   NAME     KEY                       API                                   LAST USED
-*  default  mk_1***************abcd   default                               2h ago
-   work     mk_9***************wxyz   default                               never
-   staging  mk_4***************mnop   https://api-staging.vpndetection.io   never
+   NAME     KEY                      API                      LAST USED
+   acme     mk_4***************mnop  https://api.example.com  never
+*  default  mk_1***************abcd  default                  2h ago
+   work     mk_9***************wxyz  default                  never
 
 $ vpndetection session use work
-$ vpndetection --session staging 45.83.91.1    # one command, without switching
+$ vpndetection --session work 45.83.91.1    # one command, without switching
 ```
+
+`--base-url` points a session at another deployment of the API; a session without one talks to `https://api.vpndetection.io`.
 
 A key can also come from `--key` or the `VPNDETECTION_API_KEY` environment variable, in that order of precedence. The config file is written `0600` inside a `0700` directory.
 

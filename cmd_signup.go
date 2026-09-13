@@ -2,26 +2,36 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/browser"
 	"github.com/spf13/pflag"
 )
 
-// signupURL is where an account is created. Derived from the session's API so
-// that a staging session sends you to the staging console rather than to
-// production, which is the one way this could quietly cost someone a real
-// account they did not want.
+// signupURL is where an account is created.
+//
+// Derived from the session's API host rather than fixed, so a session pointed
+// at another deployment sends you to that deployment's console instead of to
+// production - the one way this could quietly cost someone a real account they
+// did not want. Anything we do not recognise falls back to production.
 func signupURL() string {
-	switch gConfig.ResolveBaseURL() {
-	case "", "https://api.vpndetection.io":
-		return "https://app.vpndetection.io/auth/signup"
-	case "https://api-staging.vpndetection.io":
-		return "https://app-staging.vpndetection.io/auth/signup"
-	default:
-		return "https://app.vpndetection.io/auth/signup"
+	const prod = "https://app.vpndetection.io/auth/signup"
+	base := gConfig.ResolveBaseURL()
+	if base == "" {
+		return prod
 	}
+	u, err := url.Parse(base)
+	if err != nil || !strings.HasSuffix(u.Hostname(), ".vpndetection.io") {
+		return prod
+	}
+	rest, ok := strings.CutPrefix(u.Hostname(), "api")
+	if !ok {
+		return prod
+	}
+	return "https://app" + rest + "/auth/signup"
 }
 
 func printHelpSignup() {

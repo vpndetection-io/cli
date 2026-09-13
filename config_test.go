@@ -66,15 +66,16 @@ func TestResolveSessionPrecedence(t *testing.T) {
 	}
 }
 
-// The base URL comes from the SESSION, which is what lets a staging credential
-// sit beside a production one without a flag on every command.
+// The base URL comes from the SESSION, which is what lets a credential for
+// another deployment sit beside a production one without a flag on every
+// command.
 func TestResolveBaseURL(t *testing.T) {
 	cfg := NewConfig()
-	cfg.Sessions["staging"] = &Session{Key: "k", BaseURL: "https://api-staging.vpndetection.io"}
-	cfg.Active = "staging"
+	cfg.Sessions["alt"] = &Session{Key: "k", BaseURL: "https://api.example.com"}
+	cfg.Active = "alt"
 	t.Cleanup(func() { fBaseURL = "" })
 
-	if got := cfg.ResolveBaseURL(); got != "https://api-staging.vpndetection.io" {
+	if got := cfg.ResolveBaseURL(); got != "https://api.example.com" {
 		t.Errorf("got %q", got)
 	}
 	fBaseURL = "https://elsewhere.example"

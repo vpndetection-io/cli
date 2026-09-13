@@ -43,15 +43,15 @@ for target in "${!DEB_ARCH[@]}" ; do
     bin="build/vpndetection_${VSN}_${target}"
     [ -f "$bin" ] || continue
 
-    staging="build/deb_${target}"
-    rm -rf "$staging"
-    mkdir -p "$staging/DEBIAN" "$staging/usr/local/bin"
+    pkgroot="build/deb_${target}"
+    rm -rf "$pkgroot"
+    mkdir -p "$pkgroot/DEBIAN" "$pkgroot/usr/local/bin"
     sed -e "s/^Version: .*/Version: ${VSN}/" \
         -e "s/^Architecture: .*/Architecture: ${DEB_ARCH[$target]}/" \
-        dist/DEBIAN/control > "$staging/DEBIAN/control"
-    cp "$bin" "$staging/usr/local/bin/vpndetection"
-    dpkg-deb -Zgzip --build "$staging" "build/vpndetection_${VSN}_${target}.deb" >/dev/null
-    rm -rf "$staging"
+        dist/DEBIAN/control > "$pkgroot/DEBIAN/control"
+    cp "$bin" "$pkgroot/usr/local/bin/vpndetection"
+    dpkg-deb -Zgzip --build "$pkgroot" "build/vpndetection_${VSN}_${target}.deb" >/dev/null
+    rm -rf "$pkgroot"
 done
 
 echo "packaged:"

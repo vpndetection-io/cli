@@ -21,8 +21,8 @@ Description:
   https://app.vpndetection.io.
 
   Keys are stored in named sessions, so one machine can hold credentials for
-  several organizations, or for staging alongside production, and switch
-  between them with '%[1]s session use <name>'.
+  several organizations and switch between them with
+  '%[1]s session use <name>'.
 
   With no key on the command line you are prompted for one, which does not echo
   and does not reach your shell history.
@@ -34,8 +34,8 @@ Examples:
   # A second credential, kept under its own name.
   $ %[1]s login --session work
 
-  # A session pointed at staging.
-  $ %[1]s login --session staging --base-url https://api-staging.vpndetection.io
+  # A session pointed at another deployment of the API.
+  $ %[1]s login --session acme --base-url https://api.example.com
 
 Options:
   --session <name>
@@ -102,7 +102,7 @@ func cmdLogin() error {
 	session := &Session{Key: key, BaseURL: fBaseURL, Created: time.Now()}
 	if existing != nil {
 		// Re-logging in keeps the session's own base URL unless a new one was
-		// given, so `login --session staging` does not silently move it to
+		// given, so `login --session work` does not silently move it to
 		// production.
 		session.Created = existing.Created
 		if fBaseURL == "" {
