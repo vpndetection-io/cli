@@ -142,28 +142,19 @@ func TestJSONLIsOnePerLine(t *testing.T) {
 	}
 }
 
-// Pretty output omits what the plan does not include and says so once, rather
-// than printing thirty blank rows a reader would mistake for negatives.
-func TestPrettyOmitsAbsentAndSaysSo(t *testing.T) {
+// Pretty output prints ONLY what was served, and says nothing about the rest.
+// It used to close with a summary of the absent fields, which on the free tier
+// was longer than the answer and appeared under every lookup.
+func TestPrettyOmitsAbsentAndSaysNothingAboutIt(t *testing.T) {
 	got := render(t, FormatPretty, Opts{}, freeAnswer)
-	// The note names the absent flags, so the check is that they are not ROWS.
-	rows, _, _ := strings.Cut(got, "\nnot included")
-	if strings.Contains(rows, "is_hosting") {
-		t.Errorf("an absent field was printed as a row:\n%s", got)
+	if strings.Contains(got, "is_hosting") {
+		t.Errorf("an absent field was printed:\n%s", got)
 	}
-	if !strings.Contains(got, "not included in this plan") {
-		t.Errorf("no note about what is missing:\n%s", got)
+	if strings.Contains(got, "not included") || strings.Contains(got, "plan") {
+		t.Errorf("output should carry no note about the plan:\n%s", got)
 	}
 	if !strings.Contains(got, "is_vpn") {
 		t.Errorf("a served field is missing:\n%s", got)
-	}
-}
-
-// A full answer has nothing absent, so there is no note to print.
-func TestPrettyNoNoteWhenNothingAbsent(t *testing.T) {
-	got := render(t, FormatPretty, Opts{}, maxAnswer)
-	if strings.Contains(got, "not included in this plan") {
-		t.Errorf("a max answer should have nothing missing:\n%s", got)
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 
 func printHelpCache() {
 	fmt.Printf(
-		`Usage: %[1]s cache [info | clear]
+		`Usage: %[1]s cache <info | clear>
 
 Description:
   The local answer cache, which is what makes looking the same address up twice
@@ -20,6 +20,12 @@ Description:
 
   Turn it off for one run with --nocache, or for good with
   '%[1]s config cache=disable'.
+
+Subcommands:
+  info
+    where the cache is, how big it is, and how much of it has expired.
+  clear
+    empty it, across every credential.
 
 Examples:
   $ %[1]s cache info
@@ -35,15 +41,14 @@ func cmdCache() error {
 	globalFlags()
 	args := parseSubFlags()
 
-	if fHelp {
+	// A bare `cache` prints help rather than the report, matching every other
+	// subcommand here; `cache info` is the report.
+	if fHelp || len(args) == 0 {
 		printHelpCache()
 		return nil
 	}
-	if len(args) == 0 {
-		args = []string{"info"}
-	}
 	if len(args) != 1 {
-		return errors.New("usage: cache [info | clear]")
+		return errors.New("usage: cache <info | clear>")
 	}
 
 	switch strings.ToLower(args[0]) {

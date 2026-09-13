@@ -18,7 +18,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/vpndetection-io/sdk-go/v3 v3.1.0
+require github.com/vpndetection-io/sdk-go/v4 v4.1.0
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect

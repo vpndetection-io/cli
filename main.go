@@ -13,7 +13,7 @@ import (
 )
 
 // version is the release, set here and checked against the tag at release time.
-var version = "0.1.0"
+var version = "0.2.0"
 
 // progBase is the binary as the user invoked it, so every help string and
 // example names what they actually typed. Installing the binary under a
@@ -57,7 +57,7 @@ func main() {
 		err = cmdLogout()
 	case "session", "sessions":
 		err = cmdSession()
-	case "whoami", "me", "quota":
+	case "whoami", "myaccount", "quota":
 		err = cmdWhoami()
 	case "database", "db":
 		err = cmdDatabase()
@@ -84,7 +84,7 @@ func main() {
 // subcommands is every command name, including aliases.
 var subcommands = map[string]bool{
 	"myip": true, "bulk": true, "signup": true, "login": true, "init": true, "logout": true,
-	"session": true, "sessions": true, "whoami": true, "me": true, "quota": true,
+	"session": true, "sessions": true, "whoami": true, "myaccount": true, "quota": true,
 	"database": true, "db": true, "cache": true, "config": true,
 	"completion": true, "version": true, "vsn": true, "v": true,
 }

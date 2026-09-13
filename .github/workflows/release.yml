@@ -76,6 +76,13 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          # Without this the image reports `version: dev`, because the
+          # Dockerfile's ARG defaults to it and nothing was passing the real
+          # one. The binary in a release archive was right and the one in the
+          # container was not, which is the kind of difference nobody notices
+          # until they are reading a bug report.
+          build-args: |
+            VERSION=${{ needs.release.outputs.version }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |

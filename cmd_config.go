@@ -11,13 +11,13 @@ import (
 
 func printHelpConfig() {
 	fmt.Printf(
-		`Usage: %[1]s config [<key>=<value>...]
+		`Usage: %[1]s config [list | <key>=<value>...]
 
 Description:
-  Read or change stored settings. With no arguments it prints the current ones.
+  Read or change stored settings.
 
 Examples:
-  $ %[1]s config
+  $ %[1]s config list
   $ %[1]s config cache=disable
   $ %[1]s config format=json cache_ttl=24h
 
@@ -45,11 +45,13 @@ func cmdConfig() error {
 	globalFlags()
 	args := parseSubFlags()
 
-	if fHelp {
+	// A bare `config` prints help rather than the settings. It is the shape
+	// every other subcommand here has, and `config list` is one word away.
+	if fHelp || len(args) == 0 {
 		printHelpConfig()
 		return nil
 	}
-	if len(args) == 0 {
+	if len(args) == 1 && (args[0] == "list" || args[0] == "ls") {
 		return configShow()
 	}
 

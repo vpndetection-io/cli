@@ -371,35 +371,11 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 		}
 	}
 
-	if opts.ShowAbsent || len(opts.Fields) > 0 {
-		return nil
-	}
-	// Named at the end rather than shown as rows, and summarised rather than
-	// enumerated: on the free tier 35 of the 37 fields are absent, and a
-	// thirty-five-item list buries the two that answered. The FLAGS are what a
-	// reader must not mistake for a negative, so those are named; their detail
-	// objects follow from them and are counted.
-	if absent := rec.Absent(); len(absent) > 0 {
-		flags := make([]string, 0, len(Flags))
-		details := 0
-		for _, f := range absent {
-			if strings.ContainsRune(f, '.') {
-				details++
-				continue
-			}
-			flags = append(flags, f)
-		}
-		note := "not included in this plan (absent, which is not false): "
-		switch {
-		case len(flags) == 0:
-			note += fmt.Sprintf("%d detail field(s)", details)
-		case details == 0:
-			note += strings.Join(flags, ", ")
-		default:
-			note += fmt.Sprintf("%s, and %d detail field(s)", strings.Join(flags, ", "), details)
-		}
-		_, err := fmt.Fprintf(w, "\n%s\n", faint.Sprint(note))
-		return err
-	}
+	// Nothing is printed about the fields this plan does not include. It was a
+	// summary line here, and on the free tier - where 35 of the 37 fields are
+	// absent - it was longer than the answer and appeared under every single
+	// lookup. --show-absent renders them as rows for anyone who wants them, and
+	// the absent-versus-false rule is stated once in the README rather than on
+	// every line of output.
 	return nil
 }

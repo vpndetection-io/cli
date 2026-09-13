@@ -43,7 +43,7 @@ Commands:
   login       store an API key.
   logout      forget a stored API key.
   session     manage named credentials and switch between them.
-  whoami      your plan, what it includes, and what you have used.
+  whoami      your key, your plan, and what you have used.
   cache       inspect or clear the local answer cache.
   config      read or change stored settings.
   completion  install shell auto-completion.

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	vpndetection "github.com/vpndetection-io/sdk-go/v3"
+	vpndetection "github.com/vpndetection-io/sdk-go/v4"
 )
 
 func printHelpDatabase() {
@@ -144,16 +144,34 @@ func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) erro
 	for _, d := range items {
 		for _, v := range d.Versions {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-				v.ID, d.Name, d.LicenseType, d.Standing, licenceTerm(d))
+				v.ID, d.Name, licenceType(d), d.Standing, licenceTerm(d))
 		}
 	}
 	return w.Flush()
+}
+
+// licenceType renders what the licence permits, or nothing at all.
+//
+// Nil since v4: the catalogue lists every published database, not just the
+// ones an organization holds, so an unlicensed row genuinely has no type. The
+// `standing` column already says `unlicensed`, so an empty cell here reads
+// correctly rather than needing a word of its own.
+func licenceType(d vpndetection.Database) string {
+	if d.LicenseType == nil {
+		return ""
+	}
+	return string(*d.LicenseType)
 }
 
 // licenceTerm renders when a licence ends, which is the one thing a holder has to act
 // on. An empty string means there is nothing to act on.
 func licenceTerm(d vpndetection.Database) string {
 	switch {
+	// Never bought is not the same as lapsed, and since v4 the catalogue lists
+	// both. `standing` already carries the distinction; saying "lapsed" against
+	// a database nobody ever held would invent a history.
+	case d.Standing == vpndetection.StandingUnlicensed:
+		return ""
 	case !d.InTerm:
 		return "lapsed"
 	case d.Expires != nil:
