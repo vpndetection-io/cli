@@ -132,7 +132,7 @@ jobs:
         # completes on a fork.
         run: |
           if [ -z "$TAP_DEPLOY_KEY" ] ; then
-            echo "TAP_DEPLOY_KEY not set; skipping the Homebrew tap update"
+            echo "::warning title=Homebrew skipped::TAP_DEPLOY_KEY is unset, so the tap formula was not updated"
             exit 0
           fi
           ./scripts/update-homebrew.sh "$VSN"
@@ -141,13 +141,29 @@ jobs:
     needs: [version, release]
     runs-on: windows-latest
     steps:
-      - uses: vedantmgoyal2009/winget-releaser@v2
+      # Unconfigured and broken are different things, and neither may be silent:
+      # a skipped channel is GREEN, and `continue-on-error` used to swallow the
+      # real failure underneath it.
+      - id: guard
+        shell: bash
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          if [ -z "$WINGET_TOKEN" ] ; then
+            echo "::warning title=winget skipped::WINGET_TOKEN is unset, so ${{ needs.version.outputs.tag }} was not submitted to winget-pkgs"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      # vedantmgoyal2009 was renamed to vedantmgoyal9; the old path only still
+      # resolves through GitHub's rename redirect.
+      - if: steps.guard.outputs.configured == 'true'
+        uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: Mslm.VPNDetection
           installers-regex: '_windows_\w+\.zip$'
           version: ${{ needs.version.outputs.version }}
           token: ${{ secrets.WINGET_TOKEN }}
-        continue-on-error: true
 
   chocolatey:
     needs: [version, release]
@@ -161,7 +177,7 @@ jobs:
         shell: pwsh
         run: |
           if (-not $env:CHOCO_API_KEY) {
-            Write-Host "CHOCO_API_KEY not set; skipping"
+            Write-Host "::warning title=Chocolatey skipped::CHOCO_API_KEY is unset, so $env:VSN was not pushed to Chocolatey"
             exit 0
           }
           ./scripts/update-chocolatey.ps1 -Version $env:VSN -ApiKey $env:CHOCO_API_KEY
