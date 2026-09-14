@@ -66,6 +66,14 @@ type deviceAuth struct {
 	CompleteURI     string `json:"verification_uri_complete"`
 	ExpiresIn       int    `json:"expires_in"`
 	Interval        int    `json:"interval"`
+
+	// This endpoint answers failures in the same RFC 6749 shape the token
+	// endpoint does, so it needs the same two fields. Omitting them made a
+	// perfectly clear `slow_down` surface as "the authorization server returned
+	// an incomplete response", which sends the reader looking for a server bug
+	// instead of waiting a minute.
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
 }
 
 type tokenResp struct {
@@ -92,6 +100,18 @@ func startDeviceAuth(ctx context.Context) (*deviceAuth, error) {
 	var out deviceAuth
 	if err := postForm(ctx, authBaseURL()+"/oauth/device_authorization", form, &out); err != nil {
 		return nil, err
+	}
+	// The error is checked FIRST. A failed call also has no device code, so
+	// checking the fields first turns every named failure into the same
+	// unhelpful sentence.
+	if out.Error != "" {
+		if out.Error == "slow_down" {
+			return nil, errors.New("too many sign-in attempts from this address; wait a minute and try again")
+		}
+		if out.ErrorDescription != "" {
+			return nil, fmt.Errorf("%s: %s", out.Error, out.ErrorDescription)
+		}
+		return nil, errors.New(out.Error)
 	}
 	if out.DeviceCode == "" || out.UserCode == "" {
 		return nil, errors.New("the authorization server returned an incomplete response")
