@@ -39,11 +39,12 @@ func printHelpSignup() {
 		`Usage: %[1]s signup [<opts>]
 
 Description:
-  Open the console to create an account, then store the API key it gives you.
+  Create an account in the browser, then sign this machine in.
 
-  Sign up in the browser, create a key on the API page, and paste it back here;
-  the prompt does not echo and does not reach your shell history. If no browser
-  opens, the URL is printed.
+  The console opens so you can sign up. Come back and you are signed in the same
+  way '%[1]s login' does it: confirm a short code in the browser, pick which of
+  your API keys this machine should hold, and nothing is typed or pasted here.
+  If no browser opens, both URLs are printed.
 
   You do not need an account to use this tool: the free tier answers 'ip' and
   'is_vpn' with no key at all.
@@ -78,12 +79,11 @@ func cmdSignup() error {
 		fmt.Fprintln(os.Stderr, "opened your browser to create an account.")
 	}
 	fmt.Fprintf(os.Stderr, "\n  %s\n\n", url)
-	fmt.Fprintln(os.Stderr, "once you have signed up, create an API key on the API page and paste it here.")
+	fmt.Fprintln(os.Stderr, "once you have signed up, come back here and we will finish signing you in.")
 
 	// Falls through to the SAME device flow login uses, so a brand-new user
 	// finishes in the browser they already have open rather than being asked to
 	// find a key and paste it back. One path writes a credential.
-	fmt.Fprintln(os.Stderr, "once you have an account, come back here to finish.")
 	return browserLogin(fSession, fNoBrowser)
 }
 
