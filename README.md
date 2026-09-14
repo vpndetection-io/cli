@@ -72,8 +72,8 @@ Binaries are published for 22 platform and architecture pairs on the [releases p
 
 ```bash
 # Linux amd64; for Windows use ".zip" instead of ".tar.gz"
-curl -LO https://github.com/vpndetection-io/cli/releases/download/v0.2.1/vpndetection_0.2.1_linux_amd64.tar.gz
-tar -xzf vpndetection_0.2.1_linux_amd64.tar.gz
+curl -LO https://github.com/vpndetection-io/cli/releases/download/v1.0.0/vpndetection_1.0.0_linux_amd64.tar.gz
+tar -xzf vpndetection_1.0.0_linux_amd64.tar.gz
 sudo mv vpndetection /usr/local/bin/
 ```
 
@@ -110,15 +110,31 @@ Usage: vpndetection <ip | cidr | range | file>... [<opts>]
 
 ### Login
 
-You can use the CLI without an account, but a key widens the answer and raises your allowance. Create one in the [console](https://app.vpndetection.io), then:
+You can use the CLI without an account, but a key widens the answer and raises your allowance. `vpndetection login` opens your browser, you confirm a short code, and you pick which of your API keys this machine should hold:
 
 ```console
 $ vpndetection login
-API key:
-stored key mk_1************************abcd in session "default", now active
+opened your browser to finish signing in.
+
+  https://app.vpndetection.io/device
+
+and confirm this code:  MA8A-T2WQ
+
+waiting for you to approve...
+stored key mk_9************************************Etjx in session "default", now active
 ```
 
-The prompt does not echo and the key does not reach your shell history. `vpndetection signup` opens the console to create an account first.
+Nothing is typed or pasted here, so the key never reaches your shell history. If no browser opens, the URL is printed and you can open it anywhere, including on your phone - which is what makes this work over SSH.
+
+`vpndetection signup` is the same thing with the sign-up page first, so a new account and a working CLI are one step.
+
+For a CI job, pass the key directly instead:
+
+```console
+$ vpndetection login --key "$VPNDETECTION_API_KEY"
+```
+
+`vpndetection login --paste` prompts for one without opening a browser, and `vpndetection logout` signs this machine out, which ends the authorization rather than only deleting the local file.
 
 ### My IP
 

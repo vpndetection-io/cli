@@ -14,7 +14,10 @@ func TestAuthBaseURL(t *testing.T) {
 		want string
 	}{
 		{"unset falls back to production", "", "https://api.vpndetection.io"},
-		{"a session keeps its own deployment", "https://api-staging.vpndetection.io", "https://api-staging.vpndetection.io"},
+		// A hyphenated first label is the shape a non-production deployment
+		// takes, and the old code rewrote exactly that away. Kept generic: this
+		// repo is public.
+		{"a session keeps its own deployment", "https://api-eu.example.com", "https://api-eu.example.com"},
 		{"a trailing slash does not double up", "https://api.example.com/", "https://api.example.com"},
 		{"an unrelated host is honoured, not rewritten", "https://api.example.com", "https://api.example.com"},
 	}
