@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	vpndetection "github.com/vpndetection-io/sdk-go/v4"
 )
 
 // Browser-based sign-in, via the OAuth 2.0 device authorization grant
@@ -40,27 +42,21 @@ const clientID = "vpndetection-cli"
 // Notably absent is anything that could CREATE a credential.
 const loginScopes = "account.read apikeys.read apikeys.reveal"
 
-// authBaseURL derives the authorization server from the API host.
+// authBaseURL is where the authorization server lives.
 //
-// Same derivation as the console URL in cmd_signup.go and for the same reason:
-// a session pointed at another deployment must authenticate against THAT
-// deployment, never silently against production. Anything unrecognised falls
-// back to production rather than guessing.
+// It is simply the API base URL, because the authorization server is mounted on
+// PATHS of the API host (`/oauth/`, `/.well-known/`) rather than on a host of
+// its own. That is the whole reason this function is three lines: there is no
+// hostname to derive, so there is nothing here to get wrong.
+//
+// It also means a session pointed at another deployment authenticates against
+// THAT deployment automatically, rather than depending on this program agreeing
+// with the server about how to rewrite a host.
 func authBaseURL() string {
-	const prod = "https://auth.vpndetection.io"
-	base := gConfig.ResolveBaseURL()
-	if base == "" {
-		return prod
+	if base := gConfig.ResolveBaseURL(); base != "" {
+		return strings.TrimSuffix(base, "/")
 	}
-	u, err := url.Parse(base)
-	if err != nil || !strings.HasSuffix(u.Hostname(), ".vpndetection.io") {
-		return prod
-	}
-	rest, ok := strings.CutPrefix(u.Hostname(), "api")
-	if !ok {
-		return prod
-	}
-	return "https://auth" + rest
+	return vpndetection.DefaultBaseURL
 }
 
 type deviceAuth struct {
