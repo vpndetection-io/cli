@@ -59,6 +59,16 @@ type Session struct {
 
 	Created  time.Time `json:"created"`
 	LastUsed time.Time `json:"last_used,omitempty"`
+
+	// RefreshToken is present only for a session created by `login` in a
+	// browser. It is NOT used for lookups - the API key above is - and exists
+	// so `logout` can revoke server-side instead of only deleting this file,
+	// which is the difference between signing out and forgetting.
+	RefreshToken string `json:"refresh_token,omitempty"`
+
+	// APIKeyID names which key this session holds, so the console's key list
+	// and this machine can be matched up without ever comparing secrets.
+	APIKeyID string `json:"apikey_id,omitempty"`
 }
 
 const (

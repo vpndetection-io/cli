@@ -17,19 +17,24 @@ func printHelpLogin() {
 		`Usage: %[1]s login [<opts>] [<key>]
 
 Description:
-  Store an API key so later commands use it. Create one in the console at
-  https://app.vpndetection.io.
+  Sign in and store an API key so later commands use it.
+
+  With no arguments this opens your browser, you confirm a short code, and you
+  pick which of your API keys this machine should hold. Nothing is typed or
+  pasted, and the key never reaches your shell history.
 
   Keys are stored in named sessions, so one machine can hold credentials for
   several organizations and switch between them with
   '%[1]s session use <name>'.
 
-  With no key on the command line you are prompted for one, which does not echo
-  and does not reach your shell history.
+  Pass a key directly and it is stored as-is, which is what a CI job wants.
 
 Examples:
-  # Prompt for a key and store it as the default session.
+  # Sign in through the browser (the usual way).
   $ %[1]s login
+
+  # Paste a key instead, on a machine with no browser.
+  $ %[1]s login --paste
 
   # A second credential, kept under its own name.
   $ %[1]s login --session work
@@ -38,6 +43,10 @@ Examples:
   $ %[1]s login --session acme --base-url https://api.example.com
 
 Options:
+  --paste
+    prompt for a key instead of opening a browser.
+  --no-browser
+    print the sign-in URL instead of opening it.
   --session <name>
     name to store this key under. Default: %[2]s.
   --base-url <url>
@@ -53,9 +62,11 @@ Options:
 }
 
 func cmdLogin() error {
-	var fNoCheck bool
+	var fNoCheck, fPaste, fNoBrowser bool
 	globalFlags()
 	pflag.BoolVar(&fNoCheck, "no-check", false, "do not verify the key before storing it.")
+	pflag.BoolVar(&fPaste, "paste", false, "prompt for a key instead of opening a browser.")
+	pflag.BoolVar(&fNoBrowser, "no-browser", false, "print the sign-in URL instead of opening it.")
 	args := parseSubFlags()
 
 	if fHelp {
@@ -64,6 +75,13 @@ func cmdLogin() error {
 	}
 	if len(args) > 1 {
 		return errors.New("expected at most one key")
+	}
+
+	// A key supplied explicitly is still honoured, so a CI job and a script keep
+	// working exactly as before. The browser flow is only the default for the
+	// interactive case it was built for.
+	if fKey == "" && len(args) == 0 && !fPaste {
+		return browserLogin(fSession, fNoBrowser)
 	}
 
 	key := fKey

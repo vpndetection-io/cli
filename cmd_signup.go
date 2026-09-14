@@ -80,9 +80,11 @@ func cmdSignup() error {
 	fmt.Fprintf(os.Stderr, "\n  %s\n\n", url)
 	fmt.Fprintln(os.Stderr, "once you have signed up, create an API key on the API page and paste it here.")
 
-	// Falls through to the same storage login uses, so there is one path that
-	// writes a credential and one place that validates it.
-	return cmdLoginAfterSignup()
+	// Falls through to the SAME device flow login uses, so a brand-new user
+	// finishes in the browser they already have open rather than being asked to
+	// find a key and paste it back. One path writes a credential.
+	fmt.Fprintln(os.Stderr, "once you have an account, come back here to finish.")
+	return browserLogin(fSession, fNoBrowser)
 }
 
 // cmdLoginAfterSignup prompts for and stores a key.

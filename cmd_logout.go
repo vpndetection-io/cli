@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/pflag"
 )
@@ -46,6 +48,9 @@ func cmdLogout() error {
 			fmt.Println("not logged in")
 			return nil
 		}
+		for _, s := range gConfig.Sessions {
+			revokeSession(s)
+		}
 		gConfig.Sessions = map[string]*Session{}
 		gConfig.Active = ""
 		if err := SaveConfig(gConfig); err != nil {
@@ -61,6 +66,7 @@ func cmdLogout() error {
 		return nil
 	}
 
+	revokeSession(gConfig.Sessions[name])
 	delete(gConfig.Sessions, name)
 	if gConfig.Active == name {
 		gConfig.Active = ""
@@ -79,4 +85,23 @@ func cmdLogout() error {
 		fmt.Printf("session %q is now active\n", gConfig.Active)
 	}
 	return nil
+}
+
+// revokeSession tells the server to forget a browser-issued credential, so
+// logging out ends the grant rather than only deleting this machine's copy of
+// it. A session created by pasting a key has no refresh token and nothing to
+// revoke - the key itself stays valid, which is correct, because the user
+// created it elsewhere and we were only holding it.
+//
+// FAILURES ARE IGNORED ON PURPOSE. `logout` must always succeed locally: a
+// machine that is offline, or whose token has already expired, still needs its
+// stored credential gone. Refusing to log out because the network is down is
+// the wrong answer to "remove this from my laptop".
+func revokeSession(s *Session) {
+	if s == nil || s.RefreshToken == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = revokeToken(ctx, s.RefreshToken)
 }
