@@ -14,9 +14,12 @@ No account is needed to start: the free tier answers `ip` and `is_vpn`, and allo
 ### macOS
 
 ```bash
+brew trust vpndetection-io/tap
 brew tap vpndetection-io/tap
 brew install vpndetection
 ```
+
+Homebrew won't load a formula from a third-party tap until you trust it. Skip that first line and it fails with `invalid syntax in tap!`, which is misleading: the formula is fine. `brew trust` arrived in Homebrew 7, so run `brew update` first if it comes back as an unknown command.
 
 ### Debian / Ubuntu
 
@@ -69,8 +72,8 @@ Binaries are published for 22 platform and architecture pairs on the [releases p
 
 ```bash
 # Linux amd64; for Windows use ".zip" instead of ".tar.gz"
-curl -LO https://github.com/vpndetection-io/cli/releases/latest/download/vpndetection_0.1.0_linux_amd64.tar.gz
-tar -xzf vpndetection_0.1.0_linux_amd64.tar.gz
+curl -LO https://github.com/vpndetection-io/cli/releases/download/v0.2.1/vpndetection_0.2.1_linux_amd64.tar.gz
+tar -xzf vpndetection_0.2.1_linux_amd64.tar.gz
 sudo mv vpndetection /usr/local/bin/
 ```
 

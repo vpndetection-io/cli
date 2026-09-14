@@ -44,6 +44,10 @@ jobs:
           fi
           echo "version=${src}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+      # Every other job needs this one, so a stale version string fails the
+      # release before anything is built, published or pushed to a tap.
+      - name: Check every version string against the tag
+        run: ./scripts/check-versions.sh "${{ steps.vsn.outputs.version }}"
 
   release:
     needs: version
