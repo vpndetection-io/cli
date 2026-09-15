@@ -5,7 +5,7 @@
 
 The official command line interface for the [VPNDetection](https://vpndetection.io) API.
 
-Look up what an IP address is — a VPN exit, a hosting or CDN range, a Tor node, a privacy relay, or a residential, datacenter or mobile proxy — one address at a time or a few million, and download the licensed databases.
+Look up what an IP address is - a VPN exit, a hosting or CDN range, a Tor node, a privacy relay, or a residential, datacenter or mobile proxy - one address at a time or a few million, and download the licensed databases.
 
 ## Getting Started
 
@@ -68,7 +68,7 @@ The binary is named after the module, so rename it to `vpndetection` if you want
 
 ### Using `curl` / `wget`
 
-Binaries are published for 22 platform and architecture pairs on the [releases page](https://github.com/vpndetection-io/cli/releases). Pick yours:
+Binaries are published for 23 platform and architecture pairs on the [releases page](https://github.com/vpndetection-io/cli/releases). Pick yours:
 
 ```bash
 # Linux amd64; for Windows use ".zip" instead of ".tar.gz"
@@ -324,7 +324,7 @@ vpndetection config list
 vpndetection config cache=disable cache_ttl=24h
 ```
 
-Entries are partitioned by **credential**, because which fields an answer carries depends on the plan behind the key — one key's answers are never served to another's. Clearing empties every partition.
+Entries are partitioned by **credential**, because which fields an answer carries depends on the plan behind the key - one key's answers are never served to another's. Clearing empties every partition.
 
 ## Color Output
 
