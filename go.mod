@@ -7,6 +7,10 @@ go 1.25.0
 // raise this module's floor to a toolchain the build images do not have yet
 // and fail every cross-compile with "requires go >= 1.26.0". Raise them only
 // together with the Go version in the Dockerfile and the CI matrix.
+//
+// The last version of each that still declares go 1.25 is x/term v0.45.0 and
+// x/sys v0.47.0 (checked 2026-09-15), so there is headroom under the floor and
+// the pins below are not the ceiling.
 require (
 	github.com/fatih/color v1.18.0
 	github.com/mslmio/libgo-complete v1.0.0
