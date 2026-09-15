@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	vpndetection "github.com/vpndetection-io/sdk-go/v4"
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
 // Browser-based sign-in, via the OAuth 2.0 device authorization grant

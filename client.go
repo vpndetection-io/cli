@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	vpndetection "github.com/vpndetection-io/sdk-go/v4"
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
 // Client is the SDK client plus this CLI's own disk cache.

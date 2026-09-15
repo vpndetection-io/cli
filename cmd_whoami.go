@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	vpndetection "github.com/vpndetection-io/sdk-go/v4"
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 
 	"github.com/vpndetection-io/cli/lib"
 )
@@ -15,7 +15,7 @@ func printHelpWhoami() {
 	fmt.Printf(
 		`Usage: %[1]s whoami [<opts>]
 
-Aliases: myaccount, quota
+Aliases: entitlement, myaccount, quota
 
 Description:
   Which credential this machine uses, the plan behind it, and how much of the
@@ -72,7 +72,7 @@ func cmdWhoami() error {
 	}
 	defer client.Close()
 
-	acct, err := client.api.MyAccount(context.Background())
+	acct, err := client.api.MyEntitlement(context.Background())
 	if err != nil {
 		return explain(err)
 	}
