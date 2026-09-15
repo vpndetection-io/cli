@@ -242,7 +242,7 @@ hard limit   none; requests above the quota are billed as overage
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
 
-Also spelled `entitlement`, `myaccount` and `quota`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
+Also spelled `entitlement`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
 
 ### Databases
 

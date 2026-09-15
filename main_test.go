@@ -35,7 +35,7 @@ func TestDetectCommand(t *testing.T) {
 		{[]string{"vpndetection", "1.1.1.1", "db"}, ""},
 
 		// Aliases.
-		{[]string{"vpndetection", "myaccount"}, "myaccount"},
+		{[]string{"vpndetection", "entitlement"}, "entitlement"},
 		{[]string{"vpndetection", "vsn"}, "vsn"},
 		{[]string{"vpndetection", "v"}, "v"},
 	}

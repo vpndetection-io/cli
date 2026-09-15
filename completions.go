@@ -65,8 +65,6 @@ var completions = &complete.Command{
 		}},
 		"whoami":      {},
 		"entitlement": {},
-		"myaccount":   {},
-		"quota":       {},
 		"cache":       {Args: predict.Set([]string{"info", "clear"})},
 		"config": {Args: predict.Set([]string{
 			"cache=enable", "cache=disable", "cache_ttl=", "format=",

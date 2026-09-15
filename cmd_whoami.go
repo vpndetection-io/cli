@@ -15,7 +15,7 @@ func printHelpWhoami() {
 	fmt.Printf(
 		`Usage: %[1]s whoami [<opts>]
 
-Aliases: entitlement, myaccount, quota
+Aliases: entitlement
 
 Description:
   Which credential this machine uses, the plan behind it, and how much of the
@@ -27,7 +27,7 @@ Description:
 
 Examples:
   $ %[1]s whoami
-  $ %[1]s quota --json
+  $ %[1]s entitlement --json
   $ %[1]s --session work me
 
 Options:
