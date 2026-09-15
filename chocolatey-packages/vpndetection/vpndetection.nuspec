@@ -8,10 +8,11 @@
     <title>VPNDetection CLI</title>
     <authors>Mslm Dev</authors>
     <projectUrl>https://vpndetection.io</projectUrl>
+    <iconUrl>https://s3.vpndetection.io/vpndetection-public/brand/mark.svg</iconUrl>
     <licenseUrl>https://github.com/vpndetection-io/cli/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/vpndetection-io/cli</projectSourceUrl>
-    <docsUrl>https://vpndetection.io/docs/integrations/cli</docsUrl>
+    <docsUrl>https://docs.vpndetection.io/integrations/cli</docsUrl>
     <bugTrackerUrl>https://github.com/vpndetection-io/cli/issues</bugTrackerUrl>
     <tags>vpn proxy tor cdn hosting ip geolocation cli</tags>
     <summary>Official CLI for the VPNDetection API</summary>
@@ -22,6 +23,7 @@ time or in bulk, and download the licensed datasets.
 
 Works with no account: the free tier answers `ip` and `is_vpn`.
     </description>
+    <releaseNotes>https://github.com/vpndetection-io/cli/releases/tag/v@VSN@</releaseNotes>
   </metadata>
   <files>
     <file src="tools\**" target="tools" />

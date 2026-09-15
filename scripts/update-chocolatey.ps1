@@ -30,7 +30,8 @@ Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 Copy-Item -Recurse $pkg $work
 
 (Get-Content "$work/vpndetection.nuspec") `
-    -replace '<version>.*</version>', "<version>$Version</version>" |
+    -replace '<version>.*</version>', "<version>$Version</version>" `
+    -replace '@VSN@', $Version |
     Set-Content "$work/vpndetection.nuspec"
 
 (Get-Content "$work/tools/chocolateyinstall.ps1") `
