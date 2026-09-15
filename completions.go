@@ -102,11 +102,13 @@ var databaseCompletions = &complete.Command{
 // loginCompletions is shared by `login` and its `init` alias.
 var loginCompletions = &complete.Command{
 	Flags: map[string]complete.Predictor{
-		"--session":  sessionNames(),
-		"--base-url": predict.Something,
-		"--key":      predict.Something,
-		"-k":         predict.Something,
-		"--no-check": predict.Nothing,
+		"--session":    sessionNames(),
+		"--base-url":   predict.Something,
+		"--key":        predict.Something,
+		"-k":           predict.Something,
+		"--no-check":   predict.Nothing,
+		"--paste":      predict.Nothing,
+		"--no-browser": predict.Nothing,
 	},
 }
 

@@ -28,7 +28,7 @@ Description:
 Examples:
   $ %[1]s whoami
   $ %[1]s entitlement --json
-  $ %[1]s --session work me
+  $ %[1]s --session work whoami
 
 Options:
   --json, -j

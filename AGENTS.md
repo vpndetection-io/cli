@@ -11,11 +11,11 @@ Structure follows `github.com/ipinfo/cli` on purpose: a flat dispatch in
 
 **The cache is bucketed by CREDENTIAL, not just by address.** Which fields an
 answer carries is decided by the plan behind the key, so a cache keyed on the
-address alone hands a max-tier caller a free-tier answer — which reads as "not
+address alone hands a max-tier caller a free-tier answer - which reads as "not
 flagged" rather than "not included". That is the absent-versus-false trap served
 from our own disk. The bucket is `sha256(key)[:12] + "|" + host`; the key itself
 never reaches disk. `cache_test.go` pins it, and breaking the bucket makes the
-max key receive the free answer — verified by doing exactly that.
+max key receive the free answer - verified by doing exactly that.
 
 **Bulk is chunked, never collected.** `runLookup` pulls addresses through
 `iputil.WalkAddrs` into batches of 10,000 and emits each batch before reading
@@ -51,15 +51,14 @@ refuses it. Anything internal that wants the binary pulls the public image.
   asking for it fails the whole cross-compile run rather than skipping.
 - **bbolt takes an exclusive lock on the cache file.** A second invocation while
   a long `bulk` is running waits two seconds, warns, and continues without the
-  cache. That is deliberate — a cache is an optimization and must never be the
-  reason a lookup fails — but it does mean concurrent runs do not share it.
-
-## Not done yet
-
-- **`myip`.** `GET /myip` is live on `ip_api` and in its published spec, but the
-  released Go SDK has no method for it, and regenerating the SDK pulls in a
-  `db_dl_api` spec rename that is mid-flight. One SDK method away once that
-  lands. The command, its help and its completion entry were removed rather than
-  shipped broken.
-- **`whoami`'s plan, entitlements and usage.** Needs the public account API,
-  which needs the same SDK regeneration. It reports the credential in use today.
+  cache. That is deliberate - a cache is an optimization and must never be the
+  reason a lookup fails - but it does mean concurrent runs do not share it.
+- **A command lives in FOUR places, and changing one drifts the rest silently.**
+  The dispatch `switch` in `main.go`, the `subcommands` map beside it,
+  `completions.go`, and the help text (plus the README). Nothing fails when they
+  disagree: `printHelpWhoami` shipped `$ vpndetection --session work me` for two
+  releases after `me` stopped being a command, and it answers "no addresses
+  found in the input" rather than naming an unknown command. Same shape on the
+  flag side - `login` grew `--paste` and `--no-browser` with the device flow
+  and completion was never taught them. After any surface change, diff `--help`
+  against `completions.go` against `subcommands`.
