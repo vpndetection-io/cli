@@ -27,8 +27,8 @@ import (
 // is one, so the desktop case loses almost nothing.
 //
 // What comes back is an ordinary API KEY, which is what every later request
-// uses. The OAuth tokens are kept only so `whoami` can name the human and
-// `logout` can revoke server-side rather than just deleting a local file.
+// uses. The OAuth tokens are kept only so `logout` can revoke server-side
+// rather than just deleting a local file.
 
 // clientID identifies this program to the authorization server.
 //

@@ -164,7 +164,7 @@ func resolveConcurrency() int {
 	if gConfig.Concurrency > 0 {
 		return gConfig.Concurrency
 	}
-	return defaultConcurrncy
+	return defaultConcurrency
 }
 
 // resolveRetries is how many times a retryable failure is retried.

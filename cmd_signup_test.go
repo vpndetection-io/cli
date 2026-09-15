@@ -14,7 +14,7 @@ func TestSignupURL(t *testing.T) {
 	}{
 		{"", "https://app.vpndetection.io/auth/signup"},
 		{"https://api.vpndetection.io", "https://app.vpndetection.io/auth/signup"},
-		{"https://api-dev.vpndetection.io", "https://app-dev.vpndetection.io/auth/signup"},
+		{"https://api-eu.vpndetection.io", "https://app-eu.vpndetection.io/auth/signup"},
 		{"https://api.example.com", "https://app.vpndetection.io/auth/signup"},
 		{"https://vpndetection.io", "https://app.vpndetection.io/auth/signup"},
 		{"://broken", "https://app.vpndetection.io/auth/signup"},

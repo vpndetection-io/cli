@@ -72,12 +72,12 @@ type Session struct {
 }
 
 const (
-	configVersion     = 1
-	defaultSession    = "default"
-	defaultCacheTTL   = "1h"
-	defaultFormat     = "pretty"
-	defaultConcurrncy = 8
-	defaultRetries    = 2
+	configVersion      = 1
+	defaultSession     = "default"
+	defaultCacheTTL    = "1h"
+	defaultFormat      = "pretty"
+	defaultConcurrency = 8
+	defaultRetries     = 2
 )
 
 // NewConfig is the config a first run gets.
@@ -88,7 +88,7 @@ func NewConfig() Config {
 		CacheEnabled: true,
 		CacheTTL:     defaultCacheTTL,
 		Format:       defaultFormat,
-		Concurrency:  defaultConcurrncy,
+		Concurrency:  defaultConcurrency,
 		Retries:      defaultRetries,
 	}
 }

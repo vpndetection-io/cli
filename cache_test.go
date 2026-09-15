@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // The bucket is what stops one key's answers being served to another's.
 //
@@ -37,7 +40,7 @@ func TestCacheBucketSeparatesCredentials(t *testing.T) {
 	// The key must not be recoverable from the bucket name, which is written to
 	// disk in the clear.
 	for _, b := range []string{free, max} {
-		if contains(b, "key-free") || contains(b, "key-max") {
+		if strings.Contains(b, "key-free") || strings.Contains(b, "key-max") {
 			t.Errorf("the bucket name leaks the key: %q", b)
 		}
 	}
@@ -54,18 +57,4 @@ func TestCacheBucketNormalisesBaseURL(t *testing.T) {
 	if cacheBucket("k", "") == cacheBucket("k", "https://api.example.com") {
 		t.Error("the default and another deployment share a bucket")
 	}
-}
-
-func contains(haystack, needle string) bool {
-	return len(needle) > 0 && len(haystack) >= len(needle) &&
-		(haystack == needle || indexOf(haystack, needle) >= 0)
-}
-
-func indexOf(h, n string) int {
-	for i := 0; i+len(n) <= len(h); i++ {
-		if h[i:i+len(n)] == n {
-			return i
-		}
-	}
-	return -1
 }
