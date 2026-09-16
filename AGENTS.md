@@ -14,8 +14,9 @@ answer carries is decided by the plan behind the key, so a cache keyed on the
 address alone hands a max-tier caller a free-tier answer - which reads as "not
 flagged" rather than "not included". That is the absent-versus-false trap served
 from our own disk. The bucket is `sha256(key)[:12] + "|" + host`; the key itself
-never reaches disk. `cache_test.go` pins it, and breaking the bucket makes the
-max key receive the free answer - verified by doing exactly that.
+never reaches disk. `cache_test.go` pins it through `NewClient`, not only in
+`cacheBucket`: a test of that function alone stayed green with the cache opened
+under an empty key, which is one bucket for every credential.
 
 **Bulk is chunked, never collected.** `runLookup` pulls addresses through
 `iputil.WalkAddrs` into batches of 10,000 and emits each batch before reading

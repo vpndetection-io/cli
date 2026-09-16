@@ -3,6 +3,8 @@ package main
 import (
 	"strings"
 	"testing"
+
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
 // The bucket is what stops one key's answers being served to another's.
@@ -56,5 +58,56 @@ func TestCacheBucketNormalisesBaseURL(t *testing.T) {
 	}
 	if cacheBucket("k", "") == cacheBucket("k", "https://api.example.com") {
 		t.Error("the default and another deployment share a bucket")
+	}
+}
+
+// The partition has to hold where the cache is used, not only in cacheBucket: a
+// NewClient that opened it under an empty key shares one bucket across every key.
+func TestCacheServesAnAnswerOnlyToTheKeyThatFetchedIt(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	savedConfig, savedKey := gConfig, fKey
+	t.Cleanup(func() { gConfig, fKey = savedConfig, savedKey })
+	gConfig = NewConfig()
+
+	open := func(key string) *Client {
+		t.Helper()
+		fKey = key
+		client, err := NewClient()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if client.cache == nil {
+			t.Fatal("the cache did not open")
+		}
+		return client
+	}
+
+	hosting := true
+	answer := func(ip string) *vpndetection.Result {
+		return &vpndetection.Result{
+			LookupResponse: vpndetection.LookupResponse{IP: ip, IsHosting: &hosting},
+		}
+	}
+
+	// Both writers: Lookup stores through Put, LookupBatch through PutBatch.
+	maxTier := open("key-max")
+	maxTier.cache.Put("45.83.91.1", answer("45.83.91.1"))
+	maxTier.cache.PutBatch(map[string]*vpndetection.Result{"45.83.91.2": answer("45.83.91.2")})
+	maxTier.Close()
+
+	for _, ip := range []string{"45.83.91.1", "45.83.91.2"} {
+		freeTier := open("key-free")
+		leaked := freeTier.cache.Get(ip)
+		freeTier.Close()
+		if leaked != nil {
+			t.Errorf("%s: the free key was served the max key's cached answer", ip)
+		}
+
+		again := open("key-max")
+		hit := again.cache.Get(ip)
+		again.Close()
+		if hit == nil || hit.IsHosting == nil {
+			t.Errorf("%s: the max key does not get its own cached answer back", ip)
+		}
 	}
 }
