@@ -33,7 +33,7 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
-  # The release builds 22 targets from one machine, so a cross-compilation
+  # The release builds every target from one machine, so a cross-compilation
   # failure has to surface before the tag rather than during it.
   cross:
     runs-on: ubuntu-latest

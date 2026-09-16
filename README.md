@@ -38,15 +38,7 @@ curl -Ls https://github.com/vpndetection-io/cli/releases/latest/download/deb.sh 
 
 ### Windows
 
-```powershell
-winget install Mslm.VPNDetection
-```
-
-```powershell
-choco install vpndetection
-```
-
-Or install for the current user without a package manager:
+Install for the current user, which needs no admin rights:
 
 ```powershell
 iwr -useb https://github.com/vpndetection-io/cli/releases/latest/download/windows.ps1 | iex
