@@ -2,20 +2,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"strings"
-	"time"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
 // Browser-based sign-in, via the OAuth 2.0 device authorization grant
-// (RFC 8628).
+// (RFC 8628), through the SDK's client.Oauth.
 //
 // WHY THE DEVICE FLOW AND NOT A LOOPBACK REDIRECT: the other option for a
 // command-line tool is to open a browser at a redirect pointing back to
@@ -30,11 +24,9 @@ import (
 // uses. The OAuth tokens are kept only so `logout` can revoke server-side
 // rather than just deleting a local file.
 
-// clientID identifies this program to the authorization server.
-//
-// Public, hardcoded and not a secret - which is the normal shape for a client
-// that ships as a binary anyone can read. It is why the flow requires PKCE and
-// why the server issues nothing on the strength of this value alone.
+// clientID identifies this program to the authorization server. Public,
+// hardcoded and not a secret: it ships in a binary anyone can read, and a person
+// still approves every sign-in in the browser.
 const clientID = "vpndetection-cli"
 
 // The scopes login asks for. Narrow on purpose: everything here is read-only
@@ -59,117 +51,38 @@ func authBaseURL() string {
 	return vpndetection.DefaultBaseURL
 }
 
-type deviceAuth struct {
-	DeviceCode      string `json:"device_code"`
-	UserCode        string `json:"user_code"`
-	VerificationURI string `json:"verification_uri"`
-	CompleteURI     string `json:"verification_uri_complete"`
-	ExpiresIn       int    `json:"expires_in"`
-	Interval        int    `json:"interval"`
-
-	// This endpoint answers failures in the same RFC 6749 shape the token
-	// endpoint does, so it needs the same two fields. Omitting them made a
-	// perfectly clear `slow_down` surface as "the authorization server returned
-	// an incomplete response", which sends the reader looking for a server bug
-	// instead of waiting a minute.
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
-type tokenResp struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	Scope        string `json:"scope"`
-
-	// Not part of any OAuth RFC, and namespaced so it cannot be mistaken for
-	// one. This is the whole point of the flow for this program.
-	APIKey   string `json:"mslm:apikey"`
-	APIKeyID string `json:"mslm:apikey_id"`
-
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
 // startDeviceAuth asks the authorization server to begin a flow.
-func startDeviceAuth(ctx context.Context) (*deviceAuth, error) {
-	form := url.Values{}
-	form.Set("client_id", clientID)
-	form.Set("scope", loginScopes)
-
-	var out deviceAuth
-	if err := postForm(ctx, authBaseURL()+"/oauth/device_authorization", form, &out); err != nil {
+func startDeviceAuth(ctx context.Context) (*vpndetection.DeviceAuthorization, error) {
+	oauth, err := signInAPI()
+	if err != nil {
 		return nil, err
 	}
-	// The error is checked FIRST. A failed call also has no device code, so
-	// checking the fields first turns every named failure into the same
-	// unhelpful sentence.
-	if out.Error != "" {
-		if out.Error == "slow_down" {
-			return nil, errors.New("too many sign-in attempts from this address; wait a minute and try again")
-		}
-		if out.ErrorDescription != "" {
-			return nil, fmt.Errorf("%s: %s", out.Error, out.ErrorDescription)
-		}
-		return nil, errors.New(out.Error)
+	dev, err := oauth.DeviceAuthorization(ctx, clientID,
+		vpndetection.DeviceAuthorizationOptions{Scope: loginScopes})
+	var refused *vpndetection.OauthError
+	if errors.As(err, &refused) && refused.ErrorCode == "slow_down" {
+		return nil, errors.New("too many sign-in attempts from this address; wait a minute and try again")
 	}
-	if out.DeviceCode == "" || out.UserCode == "" {
-		return nil, errors.New("the authorization server returned an incomplete response")
-	}
-	if out.Interval <= 0 {
-		out.Interval = 5
-	}
-	return &out, nil
+	return dev, err
 }
 
-// pollForToken waits for the human to approve, then returns the tokens.
-//
-// The interval is the server's, and `slow_down` widens it permanently rather
-// than for one tick - that is what RFC 8628 asks for, and a client that resets
-// its interval after a single slow_down just gets told again.
-func pollForToken(ctx context.Context, dev *deviceAuth) (*tokenResp, error) {
-	interval := time.Duration(dev.Interval) * time.Second
-	deadline := time.Now().Add(time.Duration(dev.ExpiresIn) * time.Second)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(interval):
-		}
-
-		if time.Now().After(deadline) {
-			return nil, errors.New("the code expired before it was approved; run the command again")
-		}
-
-		form := url.Values{}
-		form.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
-		form.Set("device_code", dev.DeviceCode)
-		form.Set("client_id", clientID)
-
-		var out tokenResp
-		if err := postForm(ctx, authBaseURL()+"/oauth/token", form, &out); err != nil {
-			return nil, err
-		}
-
-		switch out.Error {
-		case "":
-			return &out, nil
-		case "authorization_pending":
-			// The normal case for most of this loop: nobody has clicked yet.
-		case "slow_down":
-			interval += 5 * time.Second
-		case "access_denied":
-			return nil, errors.New("the request was denied in the browser")
-		case "expired_token":
-			return nil, errors.New("the code expired before it was approved; run the command again")
-		default:
-			if out.ErrorDescription != "" {
-				return nil, fmt.Errorf("%s: %s", out.Error, out.ErrorDescription)
-			}
-			return nil, errors.New(out.Error)
-		}
+// pollForToken waits for the human to approve, then returns the tokens. The SDK
+// keeps the server's interval, widened for good by each slow_down.
+func pollForToken(
+	ctx context.Context, dev *vpndetection.DeviceAuthorization,
+) (*vpndetection.TokenResponse, error) {
+	oauth, err := signInAPI()
+	if err != nil {
+		return nil, err
 	}
+	tok, err := oauth.PollDeviceToken(ctx, clientID, dev)
+	switch {
+	case errors.Is(err, vpndetection.ErrOauthAccessDenied):
+		return nil, errors.New("the request was denied in the browser")
+	case errors.Is(err, vpndetection.ErrOauthExpiredToken):
+		return nil, errors.New("the code expired before it was approved; run the command again")
+	}
+	return tok, err
 }
 
 // revokeToken tells the server to forget a credential.
@@ -179,46 +92,23 @@ func pollForToken(ctx context.Context, dev *deviceAuth) (*tokenResp, error) {
 // expired, still needs its stored credential gone - refusing to log out because
 // the network is down would be the wrong answer to "remove this from my laptop".
 func revokeToken(ctx context.Context, token string) error {
-	form := url.Values{}
-	form.Set("token", token)
-	form.Set("client_id", clientID)
-	var out map[string]any
-	return postForm(ctx, authBaseURL()+"/oauth/revoke", form, &out)
+	oauth, err := signInAPI()
+	if err != nil {
+		return err
+	}
+	return oauth.Revoke(ctx, clientID, token)
 }
 
-func postForm(ctx context.Context, endpoint string, form url.Values, out any) error {
-	req, err := http.NewRequestWithContext(
-		ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()),
+// signInAPI is a keyless client aimed at this session's deployment. The SDK
+// keeps any key off these requests regardless; there is simply none to give.
+func signInAPI() (*vpndetection.OauthAPI, error) {
+	client, err := vpndetection.New(
+		vpndetection.WithBaseURL(authBaseURL()),
+		vpndetection.WithRetries(resolveRetries()),
+		vpndetection.WithoutCache(),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", userAgent())
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	// Bounded because this is an unauthenticated endpoint on the open internet:
-	// an unbounded ReadAll here would let a broken or hostile responder decide
-	// how much memory this process uses.
-	body, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
-	if err != nil {
-		return err
-	}
-
-	// A 4xx from the token endpoint carries a MEANINGFUL body - that is where
-	// `authorization_pending` lives - so the status alone must not short-circuit
-	// parsing. Only a response that is not JSON at all is a transport failure.
-	if err := json.Unmarshal(body, out); err != nil {
-		if res.StatusCode >= 400 {
-			return fmt.Errorf("the authorization server returned %s", res.Status)
-		}
-		return fmt.Errorf("could not read the authorization server's response: %w", err)
-	}
-	return nil
+	return client.Oauth, nil
 }

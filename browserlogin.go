@@ -22,9 +22,9 @@ func browserLogin(sessionName string, noBrowser bool) error {
 		return fmt.Errorf("could not start sign-in: %w", err)
 	}
 
-	target := dev.CompleteURI
-	if target == "" {
-		target = dev.VerificationURI
+	target := dev.VerificationURI
+	if complete := dev.VerificationURIComplete; complete != nil && *complete != "" {
+		target = *complete
 	}
 
 	opened := false
@@ -56,7 +56,7 @@ func browserLogin(sessionName string, noBrowser bool) error {
 		return err
 	}
 
-	if tok.APIKey == "" {
+	if tok.Apikey == nil || *tok.Apikey == "" {
 		// The flow succeeded but no key came back. The honest causes are that
 		// the user picked nothing, or that the key they picked predates this
 		// brand enabling key retrieval and so was never stored recoverably.
@@ -73,15 +73,20 @@ func browserLogin(sessionName string, noBrowser bool) error {
 		name = defaultSession
 	}
 	existing := gConfig.Sessions[name]
-	session := &Session{Key: tok.APIKey, BaseURL: fBaseURL, Created: time.Now()}
+	key := *tok.Apikey
+	session := &Session{Key: key, BaseURL: fBaseURL, Created: time.Now()}
 	if existing != nil {
 		session.Created = existing.Created
 		if fBaseURL == "" {
 			session.BaseURL = existing.BaseURL
 		}
 	}
-	session.RefreshToken = tok.RefreshToken
-	session.APIKeyID = tok.APIKeyID
+	if tok.RefreshToken != nil {
+		session.RefreshToken = *tok.RefreshToken
+	}
+	if tok.ApikeyID != nil {
+		session.APIKeyID = *tok.ApikeyID
+	}
 
 	gConfig.Sessions[name] = session
 	gConfig.Active = name
@@ -93,6 +98,6 @@ func browserLogin(sessionName string, noBrowser bool) error {
 	if existing != nil {
 		verb = "replaced"
 	}
-	fmt.Printf("%s key %s in session %q, now active\n", verb, maskKey(tok.APIKey), name)
+	fmt.Printf("%s key %s in session %q, now active\n", verb, maskKey(key), name)
 	return nil
 }

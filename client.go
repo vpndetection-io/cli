@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
@@ -147,12 +146,6 @@ func (c *Client) requireKey(what string) error {
 		"%s needs an API key; run `%s login`, or pass --key, or set VPNDETECTION_API_KEY",
 		what, progBase,
 	)
-}
-
-// userAgent identifies the CLI to the API, with the platform, so a support
-// question about "the CLI" can be answered from the request log.
-func userAgent() string {
-	return fmt.Sprintf("VPNDetectionCli/%s (os/%s; arch/%s)", version, runtime.GOOS, runtime.GOARCH)
 }
 
 // resolveConcurrency is the batch width: flag, then config, then the SDK's own
