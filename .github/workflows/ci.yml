@@ -32,6 +32,13 @@ jobs:
           fi
       - run: go vet ./...
       - run: go test -race ./...
+      # On the Go the release builds with, whose standard library every binary
+      # ships. GOTOOLCHAIN=auto for the install alone: setup-go exports local,
+      # and govulncheck needs a newer Go to build than the one it scans with.
+      - name: govulncheck
+        run: |
+          GOTOOLCHAIN=auto go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
 
   # The release builds every target from one machine, so a cross-compilation
   # failure has to surface before the tag rather than during it.
