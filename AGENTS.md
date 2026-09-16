@@ -62,3 +62,8 @@ refuses it. Anything internal that wants the binary pulls the public image.
   flag side - `login` grew `--paste` and `--no-browser` with the device flow
   and completion was never taught them. After any surface change, diff `--help`
   against `completions.go` against `subcommands`.
+- **Check an advisory against a release binary, not against `go.mod`.** Most of
+  the module graph never links - gin and echo arrive through
+  `oapi-codegen/runtime` - so `go version -m` on a release binary is the set that
+  ships. Releases are stripped, so whether a flagged symbol is actually linked
+  takes `go tool nm` on an unstripped build for each affected GOOS.
