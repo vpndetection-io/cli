@@ -43,11 +43,11 @@ refuses it. Anything internal that wants the binary pulls the public image.
 
 ## Gotchas hit building it
 
-- **`x/term` and `x/sys` are pinned below their latest releases.** From v0.46.0
-  and v0.48.0 they declare `go 1.26.0`, which raises this module's floor above
-  the toolchain the build images carry and fails every cross-compile with
-  `requires go >= 1.26.0`. The note is in `go.mod`; raise them together with the
-  Dockerfile and the CI matrix.
+- **Two Go versions: the BUILD and the FLOOR.** The Dockerfile, `release.yml`,
+  and ci.yml's cross and govulncheck legs build on 1.27; move all four together
+  when it leaves support, since govulncheck judges the Go that ships. `go.mod`
+  stays at 1.25, proven by ci.yml's 1.25 leg, so `x/term` and `x/sys` are pinned
+  below the releases that declare `go 1.26.0` (the note is in `go.mod`).
 - **`windows/arm` is gone.** Go no longer supports 32-bit Windows on ARM, and
   asking for it fails the whole cross-compile run rather than skipping.
 - **bbolt takes an exclusive lock on the cache file.** A second invocation while

@@ -4,9 +4,8 @@ go 1.25.0
 
 // x/term and x/sys are held BELOW their latest releases on purpose: from
 // x/term v0.46.0 and x/sys v0.48.0 they declare `go 1.26.0`, which would
-// raise this module's floor to a toolchain the build images do not have yet
-// and fail every cross-compile with "requires go >= 1.26.0". Raise them only
-// together with the Go version in the Dockerfile and the CI matrix.
+// raise this module's floor above 1.25. The release has built on 1.27 since
+// 2026-09-16 and the floor was kept at 1.25; CI's 1.25 leg proves it holds.
 //
 // The last version of each that still declares go 1.25 is x/term v0.45.0 and
 // x/sys v0.47.0 (checked 2026-09-15), so there is headroom under the floor and

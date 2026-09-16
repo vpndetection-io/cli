@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # One version: x/term and x/sys declare go 1.26 from their latest
-        # releases, so the module floor is 1.25 and there is no older toolchain
-        # this builds on. See the note in go.mod.
-        go: ['1.25']
+        # 1.25 proves the go.mod floor still builds (see the note there). 1.27 is
+        # what the release and the Dockerfile build with, and the only leg
+        # govulncheck runs on: every binary ships that Go's standard library.
+        go: ['1.25', '1.27']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -32,10 +32,10 @@ jobs:
           fi
       - run: go vet ./...
       - run: go test -race ./...
-      # On the Go the release builds with, whose standard library every binary
-      # ships. GOTOOLCHAIN=auto for the install alone: setup-go exports local,
-      # and govulncheck needs a newer Go to build than the one it scans with.
+      # GOTOOLCHAIN=auto for the install alone: setup-go exports local, and
+      # govulncheck may need a newer Go to build than the one it scans with.
       - name: govulncheck
+        if: matrix.go == '1.27'
         run: |
           GOTOOLCHAIN=auto go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
@@ -48,5 +48,5 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.25'
+          go-version: '1.27'
       - run: ./scripts/build-all-platforms.sh 0.0.0-ci
