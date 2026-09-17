@@ -38,7 +38,11 @@ jobs:
         if: matrix.go == '1.27'
         run: |
           GOTOOLCHAIN=auto go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          # Each GOOS build-all-platforms.sh ships: a scan reads only that GOOS's files.
+          for goos in darwin dragonfly freebsd linux netbsd openbsd solaris windows ; do
+            echo "govulncheck GOOS=${goos}"
+            GOOS="$goos" govulncheck ./...
+          done
 
   # The release builds every target from one machine, so a cross-compilation
   # failure has to surface before the tag rather than during it.
