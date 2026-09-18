@@ -1,15 +1,7 @@
 module github.com/vpndetection-io/cli
 
-go 1.25.0
+go 1.26.0
 
-// x/term and x/sys are held BELOW their latest releases on purpose: from
-// x/term v0.46.0 and x/sys v0.48.0 they declare `go 1.26.0`, which would
-// raise this module's floor above 1.25. The release has built on 1.27 since
-// 2026-09-16 and the floor was kept at 1.25; CI's 1.25 leg proves it holds.
-//
-// The last version of each that still declares go 1.25 is x/term v0.45.0 and
-// x/sys v0.47.0 (checked 2026-09-15), so there is headroom under the floor and
-// the pins below are not the ceiling.
 require (
 	github.com/fatih/color v1.18.0
 	github.com/mslmio/libgo-complete v1.0.0
@@ -21,7 +13,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/vpndetection-io/sdk-go/v5 v5.2.0
+require github.com/vpndetection-io/sdk-go/v5 v5.3.0
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
@@ -30,6 +22,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oapi-codegen/runtime v1.7.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 )

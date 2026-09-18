@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 1.25 proves the go.mod floor still builds (see the note there). 1.27 is
+        # 1.26 proves the go.mod floor still builds (AGENTS.md). 1.27 is
         # what the release and the Dockerfile build with, and the only leg
         # govulncheck runs on: every binary ships that Go's standard library.
-        go: ['1.25', '1.27']
+        go: ['1.26', '1.27']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7

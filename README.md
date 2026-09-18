@@ -85,7 +85,7 @@ cd cli
 ./scripts/build.sh
 ```
 
-The result lands in `build/`. Go 1.25 or newer.
+The result lands in `build/`. Go 1.26 or newer.
 
 ## Quick Start
 

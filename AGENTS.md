@@ -45,9 +45,10 @@ refuses it. Anything internal that wants the binary pulls the public image.
 
 - **Two Go versions: the BUILD and the FLOOR.** The Dockerfile, `release.yml`,
   and ci.yml's cross and govulncheck legs build on 1.27; move all four together
-  when it leaves support, since govulncheck judges the Go that ships. `go.mod`
-  stays at 1.25, proven by ci.yml's 1.25 leg, so `x/term` and `x/sys` are pinned
-  below the releases that declare `go 1.26.0` (the note is in `go.mod`).
+  when it leaves support, since govulncheck judges the Go that ships, and read
+  the new line's Ports notes first: Go 1.27 dropped macOS 12. `go.mod` is the
+  floor, 1.26 like every Go module here (`docs/sdk/go-releasing.md`), proven by
+  ci.yml's 1.26 leg.
 - **`windows/arm` is gone.** Go no longer supports 32-bit Windows on ARM, and
   asking for it fails the whole cross-compile run rather than skipping.
 - **bbolt takes an exclusive lock on the cache file.** A second invocation while
