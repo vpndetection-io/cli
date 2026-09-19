@@ -7,6 +7,18 @@
 set -e
 
 VSN="${VSN:-1.2.0}"
+
+# Go 1.27 builds the release and needs macOS 13 Ventura. 1.2.0, built on Go
+# 1.25, is the last release that runs on macOS 12.
+os="$(sw_vers -productVersion 2>/dev/null || true)"
+if [ "${os%%.*}" -lt 13 ] 2>/dev/null ; then
+    echo "vpndetection needs macOS 13 Ventura or later; this is macOS ${os}." >&2
+    echo "1.2.0 is the last release that runs on it:" >&2
+    echo >&2
+    echo "  curl -Ls https://github.com/vpndetection-io/cli/releases/download/v1.2.0/macos.sh | sh" >&2
+    exit 1
+fi
+
 case "$(uname -m)" in
     arm64)  ARCH=arm64 ;;
     x86_64) ARCH=amd64 ;;

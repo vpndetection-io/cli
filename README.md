@@ -21,6 +21,8 @@ brew install vpndetection
 
 Homebrew won't load a formula from a third-party tap until you trust it. Skip that first line and it fails with `invalid syntax in tap!`, which is misleading: the formula is fine. `brew trust` arrived in Homebrew 7, so run `brew update` first if it comes back as an unknown command.
 
+The CLI needs macOS 13 Ventura or later. [1.2.0](https://github.com/vpndetection-io/cli/releases/tag/v1.2.0) is the last release that runs on macOS 12 Monterey.
+
 ### Debian / Ubuntu
 
 Install from our apt repository, which keeps the CLI up to date with `apt upgrade`:

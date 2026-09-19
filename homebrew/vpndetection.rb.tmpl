@@ -6,6 +6,10 @@ class Vpndetection < Formula
   license "MIT"
 
   on_macos do
+    # Go 1.27 builds the release and needs Ventura. Inside on_macos because
+    # Homebrew satisfies it only on macOS: at the top level every Linux install fails.
+    depends_on macos: :ventura
+
     on_arm do
       url "https://github.com/vpndetection-io/cli/releases/download/v@VSN@/vpndetection_@VSN@_darwin_arm64.tar.gz"
       sha256 "@DARWIN_ARM@"
