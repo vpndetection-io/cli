@@ -16,7 +16,9 @@ flagged" rather than "not included". That is the absent-versus-false trap served
 from our own disk. The bucket is `sha256(key)[:12] + "|" + host`; the key itself
 never reaches disk. `cache_test.go` pins it through `NewClient`, not only in
 `cacheBucket`: a test of that function alone stayed green with the cache opened
-under an empty key, which is one bucket for every credential.
+under an empty key, which is one bucket for every credential. The `[:12]` is
+pinned in `config_test.go` instead, because every test here passes on a
+one-character fingerprint - the two keys they sample differ at any width.
 
 **Bulk is chunked, never collected.** `runLookup` pulls addresses through
 `iputil.WalkAddrs` into batches of 10,000 and emits each batch before reading

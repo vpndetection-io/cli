@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -138,6 +139,34 @@ func TestLoadConfigRefusesToClobberGarbage(t *testing.T) {
 	}
 	if string(body) != "{not json" {
 		t.Errorf("the file was rewritten: %q", body)
+	}
+}
+
+// The fingerprint is what partitions the cache, so its width is load-bearing:
+// two keys whose fingerprints collide share a bucket, and one is then served
+// the other's answer under a plan that need not carry the same fields.
+// cache_test.go pins only that two sampled keys differ, which a narrower
+// truncation would still satisfy.
+func TestKeyFingerprint(t *testing.T) {
+	const width = 12
+	const key = "mk_1234567890abcd"
+
+	if got := keyFingerprint(""); got != "none" {
+		t.Errorf("keyFingerprint(%q) = %q, want %q", "", got, "none")
+	}
+
+	fp := keyFingerprint(key)
+	if len(fp) != width {
+		t.Errorf("fingerprint %q is %d chars, want %d: narrower collides sooner", fp, len(fp), width)
+	}
+	if strings.Trim(fp, "0123456789abcdef") != "" {
+		t.Errorf("fingerprint %q is not lowercase hex", fp)
+	}
+	if keyFingerprint(key) != fp {
+		t.Error("the fingerprint is not stable for one key, so the cache never hits")
+	}
+	if strings.Contains(fp, key) {
+		t.Errorf("the fingerprint leaks the key: %q", fp)
 	}
 }
 
