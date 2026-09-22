@@ -28,7 +28,7 @@ func TestAuthBaseURL(t *testing.T) {
 		// repo is public.
 		{"a session keeps its own deployment", "https://api-eu.example.com", "https://api-eu.example.com"},
 		{"a trailing slash does not double up", "https://api.example.com/", "https://api.example.com"},
-		{"an unrelated host is honoured, not rewritten", "https://api.example.com", "https://api.example.com"},
+		{"an unrelated host is honored, not rewritten", "https://api.example.com", "https://api.example.com"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

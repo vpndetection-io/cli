@@ -9,6 +9,12 @@ import (
 // formats is every --format value, offered wherever one is taken.
 var formats = predict.Set([]string{"pretty", "json", "jsonl", "csv", "yaml"})
 
+// dbFormats is every file a database is published as.
+var dbFormats = predict.Set([]string{"csvgz", "mmdb"})
+
+// jsonFlags are the ones every command with a JSON form takes.
+var jsonFlags = map[string]complete.Predictor{"--json": predict.Nothing, "-j": predict.Nothing}
+
 // outputFlags are the ones every lookup command shares.
 func outputFlags() map[string]complete.Predictor {
 	return map[string]complete.Predictor{
@@ -55,19 +61,14 @@ var completions = &complete.Command{
 			"--session": sessionNames(),
 			"--all":     predict.Nothing,
 		}},
-		"signup": {Flags: map[string]complete.Predictor{"--no-browser": predict.Nothing}},
-		"session": {Sub: map[string]*complete.Command{
-			"list":   {},
-			"use":    {Args: sessionNames()},
-			"show":   {Args: sessionNames()},
-			"rename": {Args: sessionNames()},
-			"rm":     {Args: sessionNames()},
-		}},
-		"whoami":      {},
-		"entitlement": {},
+		"signup":      {Flags: map[string]complete.Predictor{"--no-browser": predict.Nothing}},
+		"session":     sessionCompletions,
+		"sessions":    sessionCompletions,
+		"whoami":      whoamiCompletions,
+		"entitlement": whoamiCompletions,
 		"cache":       {Args: predict.Set([]string{"info", "clear"})},
 		"config": {Args: predict.Set([]string{
-			"cache=enable", "cache=disable", "cache_ttl=", "format=",
+			"list", "cache=enable", "cache=disable", "cache_ttl=", "format=",
 			"concurrency=", "retries=",
 		})},
 		"completion": {Args: predict.Set([]string{"install", "uninstall", "bash", "zsh", "fish"})},
@@ -86,13 +87,17 @@ var completions = &complete.Command{
 // cannot drift into offering different subcommands.
 var databaseCompletions = &complete.Command{
 	Sub: map[string]*complete.Command{
-		"list":      {},
-		"metadata":  {},
-		"checksum":  {Flags: map[string]complete.Predictor{"--format": predict.Set([]string{"csvgz", "mmdb"})}},
-		"url":       {Flags: map[string]complete.Predictor{"--format": predict.Set([]string{"csvgz", "mmdb"})}},
-		"downloads": {Flags: map[string]complete.Predictor{"--limit": predict.Something}},
+		"list":     {Flags: jsonFlags},
+		"metadata": {},
+		"checksum": {Flags: map[string]complete.Predictor{
+			"--format": dbFormats, "--json": predict.Nothing, "-j": predict.Nothing,
+		}},
+		"url": {Flags: map[string]complete.Predictor{"--format": dbFormats}},
+		"downloads": {Flags: map[string]complete.Predictor{
+			"--limit": predict.Something, "--json": predict.Nothing, "-j": predict.Nothing,
+		}},
 		"download": {Flags: map[string]complete.Predictor{
-			"--format":    predict.Set([]string{"csvgz", "mmdb"}),
+			"--format":    dbFormats,
 			"--stdout":    predict.Nothing,
 			"--no-verify": predict.Nothing,
 		}},
@@ -111,6 +116,20 @@ var loginCompletions = &complete.Command{
 		"--no-browser": predict.Nothing,
 	},
 }
+
+// sessionCompletions is shared by `session` and its `sessions` alias.
+var sessionCompletions = &complete.Command{
+	Sub: map[string]*complete.Command{
+		"list":   {},
+		"use":    {Args: sessionNames()},
+		"show":   {Args: sessionNames()},
+		"rename": {Args: sessionNames()},
+		"rm":     {Args: sessionNames()},
+	},
+}
+
+// whoamiCompletions is shared by `whoami` and its `entitlement` alias.
+var whoamiCompletions = &complete.Command{Flags: jsonFlags}
 
 // handleCompletions answers a shell completion request, if this is one.
 func handleCompletions() {

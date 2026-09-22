@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/pkg/browser"
 	"github.com/spf13/pflag"
@@ -16,7 +15,7 @@ import (
 // Derived from the session's API host rather than fixed, so a session pointed
 // at another deployment sends you to that deployment's console instead of to
 // production - the one way this could quietly cost someone a real account they
-// did not want. Anything we do not recognise falls back to production.
+// did not want. Anything we do not recognize falls back to production.
 func signupURL() string {
 	const prod = "https://app.vpndetection.io/auth/signup"
 	base := gConfig.ResolveBaseURL()
@@ -85,30 +84,4 @@ func cmdSignup() error {
 	// finishes in the browser they already have open rather than being asked to
 	// find a key and paste it back. One path writes a credential.
 	return browserLogin(fSession, fNoBrowser)
-}
-
-// cmdLoginAfterSignup prompts for and stores a key.
-func cmdLoginAfterSignup() error {
-	key, err := promptKey()
-	if err != nil {
-		return err
-	}
-	if key == "" {
-		fmt.Fprintf(os.Stderr, "no key given; run `%s login` when you have one.\n", progBase)
-		return nil
-	}
-	if err := checkKey(key, fBaseURL); err != nil {
-		return err
-	}
-	name := fSession
-	if name == "" {
-		name = defaultSession
-	}
-	gConfig.Sessions[name] = &Session{Key: key, BaseURL: fBaseURL, Created: time.Now()}
-	gConfig.Active = name
-	if err := SaveConfig(gConfig); err != nil {
-		return err
-	}
-	fmt.Printf("stored key %s in session %q, now active\n", maskKey(key), name)
-	return nil
 }

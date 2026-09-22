@@ -113,7 +113,7 @@ func TestPresentKeepsUnknownFields(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("an unrecognised field was dropped: %v", rec.Present())
+		t.Errorf("an unrecognized field was dropped: %v", rec.Present())
 	}
 }
 

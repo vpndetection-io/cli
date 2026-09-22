@@ -3,7 +3,7 @@ package main
 import "testing"
 
 // The console URL is derived from the session's API host rather than listed,
-// so a new deployment needs no code change here. A host we do not recognise
+// so a new deployment needs no code change here. A host we do not recognize
 // must fall back to production rather than to a guess: sending someone to a
 // made-up console is worse than sending them to the real one.
 func TestSignupURL(t *testing.T) {

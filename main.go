@@ -33,7 +33,7 @@ var (
 )
 
 func main() {
-	// NO_COLOR is the cross-tool convention and costs nothing to honour.
+	// NO_COLOR is the cross-tool convention and costs nothing to honor.
 	if os.Getenv("NO_COLOR") != "" {
 		color.NoColor = true
 	}

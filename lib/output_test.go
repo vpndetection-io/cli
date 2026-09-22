@@ -82,7 +82,7 @@ func TestCSVEmptyStillHasHeader(t *testing.T) {
 }
 
 // The JSON writer streams, so the object has to be assembled correctly as it
-// goes rather than marshalled at the end.
+// goes rather than marshaled at the end.
 func TestJSONStreamsValidObject(t *testing.T) {
 	got := render(t, FormatJSON, Opts{}, freeAnswer, maxAnswer)
 	var parsed map[string]any

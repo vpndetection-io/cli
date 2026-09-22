@@ -135,22 +135,6 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 // errNoInput is returned when the command found nothing to look up.
 var errNoInput = errors.New("no addresses in input")
 
-// lookupOne answers a single address with no streaming machinery, for the
-// commands that already know they have exactly one.
-func lookupOne(ctx context.Context, ip string, opts lookupOpts) error {
-	client, err := NewClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	result, err := client.Lookup(ctx, ip)
-	if err != nil {
-		return explain(err)
-	}
-	return writeOne(ip, result, opts)
-}
-
 // writeOne renders one answer in the chosen format.
 func writeOne(ip string, result *vpndetection.Result, opts lookupOpts) error {
 	format := opts.format

@@ -77,7 +77,7 @@ func cmdLogin() error {
 		return errors.New("expected at most one key")
 	}
 
-	// A key supplied explicitly is still honoured, so a CI job and a script keep
+	// A key supplied explicitly is still honored, so a CI job and a script keep
 	// working exactly as before. The browser flow is only the default for the
 	// interactive case it was built for.
 	if fKey == "" && len(args) == 0 && !fPaste {

@@ -50,7 +50,7 @@ type Opts struct {
 	// ShowAbsent renders the fields this plan does not include, rather than
 	// omitting them and noting the omission.
 	ShowAbsent bool
-	// Color enables ANSI colour in the pretty format.
+	// Color enables ANSI color in the pretty format.
 	Color bool
 }
 
@@ -336,7 +336,7 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 		fields = ExpandFields(opts.Fields)
 	case opts.ShowAbsent:
 		// Every column, so the ones this plan does not include are rendered as
-		// "-" rather than summarised at the end.
+		// "-" rather than summarized at the end.
 		fields = append(append([]string{}, Columns...), extraOf(rec)...)
 	}
 

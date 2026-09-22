@@ -1,5 +1,5 @@
 // Package lib holds the CLI's output machinery: how one answer becomes a table
-// row, a CSV line, a JSON object or a coloured block.
+// row, a CSV line, a JSON object or a colored block.
 package lib
 
 import (

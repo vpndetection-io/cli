@@ -27,11 +27,11 @@ Description:
   published as files you host yourself.
 
   Access is granted by contract rather than bought self-serve, and needs a key
-  carrying the 'db.download' scope. '%[1]s database list' shows what your
-  organization holds.
+  carrying the 'db.download' scope. '%[1]s database list' shows every
+  published dataset and where your organization's license for it stands.
 
 Commands:
-  list                 datasets your organization is licensed for.
+  list                 published datasets, with your license beside each.
   metadata <id>        what is inside one: columns, row count, sizes, build date.
   checksum <id>        digests of one published file.
   download <id> [out]  fetch it, verifying the checksum.
@@ -47,8 +47,14 @@ Examples:
 
 Options:
   --format <csvgz | mmdb>
-    which published file. Default: csvgz. The provider catalogues are keyed by
+    which published file. Default: csvgz. The provider catalogs are keyed by
     provider rather than by address, so they have no mmdb.
+  --limit <n>
+    how many download records to show. Default: 50.
+  --stdout
+    write a download to standard output instead of a file, unverified.
+  --no-verify
+    skip the checksum check after downloading.
   --json, -j
     output JSON instead of a table.
   --help, -h
@@ -83,7 +89,7 @@ func cmdDatabase() error {
 		return err
 	}
 	defer client.Close()
-	if err := client.requireKey("the database commands"); err != nil {
+	if err := client.requireKey("a database command"); err != nil {
 		return err
 	}
 
@@ -99,7 +105,7 @@ func cmdDatabase() error {
 		if len(args) != 2 {
 			return errors.New("usage: database metadata <id>")
 		}
-		return dbMetadata(ctx, db, args[1], fJSON)
+		return dbMetadata(ctx, db, args[1])
 	case "checksum", "checksums":
 		if len(args) != 2 {
 			return errors.New("usage: database checksum <id>")
@@ -144,30 +150,30 @@ func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) erro
 	for _, d := range items {
 		for _, v := range d.Versions {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-				v.ID, d.Name, licenceType(d), d.Standing, licenceTerm(d))
+				v.ID, d.Name, licenseType(d), d.Standing, licenseTerm(d))
 		}
 	}
 	return w.Flush()
 }
 
-// licenceType renders what the licence permits, or nothing at all.
+// licenseType renders what the license permits, or nothing at all.
 //
-// Nil since v4: the catalogue lists every published database, not just the
+// Nil since v4: the catalog lists every published database, not just the
 // ones an organization holds, so an unlicensed row genuinely has no type. The
 // `standing` column already says `unlicensed`, so an empty cell here reads
 // correctly rather than needing a word of its own.
-func licenceType(d vpndetection.Database) string {
+func licenseType(d vpndetection.Database) string {
 	if d.LicenseType == nil {
 		return ""
 	}
 	return string(*d.LicenseType)
 }
 
-// licenceTerm renders when a licence ends, which is the one thing a holder has to act
+// licenseTerm renders when a license ends, which is the one thing a holder has to act
 // on. An empty string means there is nothing to act on.
-func licenceTerm(d vpndetection.Database) string {
+func licenseTerm(d vpndetection.Database) string {
 	switch {
-	// Never bought is not the same as lapsed, and since v4 the catalogue lists
+	// Never bought is not the same as lapsed, and since v4 the catalog lists
 	// both. `standing` already carries the distinction; saying "lapsed" against
 	// a database nobody ever held would invent a history.
 	case d.Standing == vpndetection.StandingUnlicensed:
@@ -183,13 +189,10 @@ func licenceTerm(d vpndetection.Database) string {
 	}
 }
 
-func dbMetadata(ctx context.Context, db *vpndetection.DatabaseAPI, id string, asJSON bool) error {
+func dbMetadata(ctx context.Context, db *vpndetection.DatabaseAPI, id string) error {
 	meta, err := db.Metadata(ctx, id)
 	if err != nil {
 		return explain(err)
-	}
-	if asJSON {
-		return emitJSON(meta)
 	}
 	return emitJSON(meta)
 }

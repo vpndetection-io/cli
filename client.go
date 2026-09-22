@@ -185,7 +185,7 @@ func explain(err error) error {
 	case vpndetection.KindUnauthorized:
 		return fmt.Errorf("%w\nthe API key was not accepted; check `%s whoami`", err, progBase)
 	case vpndetection.KindForbidden:
-		return fmt.Errorf("%w\nthis key's plan or licence does not cover that", err)
+		return fmt.Errorf("%w\nthis key's plan or license does not cover that", err)
 	case vpndetection.KindQuotaExceeded:
 		return fmt.Errorf("%w\nsee `%s whoami` for the allowance and when it resets", err, progBase)
 	case vpndetection.KindRateLimited:

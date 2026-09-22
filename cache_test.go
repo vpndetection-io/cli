@@ -50,7 +50,7 @@ func TestCacheBucketSeparatesCredentials(t *testing.T) {
 
 // The host is what distinguishes deployments, so the bucket has to survive a
 // base URL given with a path or a trailing slash.
-func TestCacheBucketNormalisesBaseURL(t *testing.T) {
+func TestCacheBucketNormalizesBaseURL(t *testing.T) {
 	a := cacheBucket("k", "https://api.example.com")
 	b := cacheBucket("k", "https://api.example.com/")
 	if a != b {

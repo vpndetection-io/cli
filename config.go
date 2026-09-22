@@ -282,7 +282,7 @@ func keyFingerprint(key string) string {
 	return hex.EncodeToString(sum[:])[:12]
 }
 
-// maskKey shows enough of a key to recognise it and not enough to use it.
+// maskKey shows enough of a key to recognize it and not enough to use it.
 func maskKey(key string) string {
 	if key == "" {
 		return ""
