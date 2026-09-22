@@ -13,7 +13,7 @@ import (
 )
 
 // version is the release, set here and checked against the tag at release time.
-var version = "1.3.0"
+var version = "1.3.1"
 
 // progBase is the binary as the user invoked it, so every help string and
 // example names what they actually typed. Installing the binary under a
