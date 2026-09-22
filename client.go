@@ -43,6 +43,7 @@ func NewClient() (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	touchSession(key)
 
 	c := &Client{api: api, key: key}
 	if gConfig.CacheEnabled && !fNoCache {

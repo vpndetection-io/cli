@@ -160,17 +160,25 @@ func SaveConfig(cfg Config) error {
 	}
 	data = append(data, '\n')
 
-	// Written to a neighbouring file and renamed, so an interrupted write
-	// cannot leave a truncated file - which here means losing every stored key.
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+	// Written to a file of its own and renamed, so an interrupted write cannot
+	// leave a truncated file - which here means losing every stored key - and
+	// two processes saving at once cannot interleave into one. CreateTemp makes
+	// it 0600.
+	tmp, err := os.CreateTemp(filepath.Dir(path), "config-*.tmp")
+	if err != nil {
 		return err
 	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
+	_, err = tmp.Write(data)
+	if closeErr := tmp.Close(); err == nil {
+		err = closeErr
 	}
-	return nil
+	if err == nil {
+		err = os.Rename(tmp.Name(), path)
+	}
+	if err != nil {
+		_ = os.Remove(tmp.Name())
+	}
+	return err
 }
 
 // SessionNames are the stored sessions, sorted.
@@ -238,6 +246,28 @@ func (c Config) ResolveBaseURL() string {
 		return s.BaseURL
 	}
 	return ""
+}
+
+// touchSession records that the active session's key is in use, for the LAST
+// USED column of `session list`. Best effort and at most once a minute, the
+// resolution `since` prints: it must never fail a command, nor rewrite the
+// credential file on every lookup of a script. Both are judged by the file as
+// it is now rather than by gConfig, so a session another terminal stored since
+// this process started survives, and parallel runs stop at the first stamp.
+func touchSession(key string) {
+	if key == "" {
+		return
+	}
+	cfg, err := LoadConfig()
+	if err != nil {
+		return
+	}
+	s := cfg.Sessions[gConfig.ActiveSessionName()]
+	if s == nil || s.Key != key || time.Since(s.LastUsed) < time.Minute {
+		return
+	}
+	s.LastUsed = time.Now()
+	_ = SaveConfig(cfg)
 }
 
 // keyFingerprint identifies a key without storing or showing it.

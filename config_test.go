@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -185,5 +186,97 @@ func TestMaskKey(t *testing.T) {
 	// Whatever it shows, it must never be the key itself.
 	if maskKey("mk_1234567890abcd") == "mk_1234567890abcd" {
 		t.Error("the key leaked through the mask")
+	}
+}
+
+// LAST USED in `session list` is only as good as the stamp NewClient leaves: a
+// key given for one run is not the session's use, the stamp goes into the file
+// as it is now rather than over whatever another terminal saved since this
+// process read it, and it is written at most once a minute.
+func TestNewClientStampsTheSessionItUses(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedKey, savedSession := gConfig, fKey, fSession
+	t.Cleanup(func() { gConfig, fKey, fSession = savedConfig, savedKey, savedSession })
+	fSession = ""
+
+	gConfig = NewConfig()
+	gConfig.CacheEnabled = false
+	gConfig.Sessions["work"] = &Session{Key: "key-work", Created: time.Now()}
+	gConfig.Active = "work"
+	if err := SaveConfig(gConfig); err != nil {
+		t.Fatal(err)
+	}
+
+	use := func(key string) {
+		t.Helper()
+		fKey = key
+		client, err := NewClient()
+		if err != nil {
+			t.Fatal(err)
+		}
+		client.Close()
+	}
+	load := func() Config {
+		t.Helper()
+		cfg, err := LoadConfig()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return cfg
+	}
+
+	use("key-other")
+	if got := load().Sessions["work"].LastUsed; !got.IsZero() {
+		t.Errorf("a key given for one run was recorded as the session's use: %v", got)
+	}
+
+	// Another terminal stores a session after this process read the file.
+	onDisk := load()
+	onDisk.Sessions["acme"] = &Session{Key: "key-acme", Created: time.Now()}
+	if err := SaveConfig(onDisk); err != nil {
+		t.Fatal(err)
+	}
+
+	use("")
+	after := load()
+	if got := after.Sessions["work"].LastUsed; time.Since(got) > time.Minute {
+		t.Errorf("using the session's own key did not stamp it: %v", got)
+	}
+	if after.Sessions["acme"] == nil {
+		t.Error("the stamp wrote this process's stale copy over a session stored since")
+	}
+
+	// A second use inside the minute leaves the file alone.
+	use("")
+	if got := load().Sessions["work"].LastUsed; !got.Equal(after.Sessions["work"].LastUsed) {
+		t.Errorf("a second use inside the minute rewrote the stamp: %v, then %v",
+			after.Sessions["work"].LastUsed, got)
+	}
+}
+
+// Two saves at once must leave one of them, never a mix: with a single shared
+// temp file, one save renames the other's half-written copy into place, or
+// finds it already gone.
+func TestSaveConfigConcurrently(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	cfg := NewConfig()
+	cfg.Sessions["work"] = &Session{Key: "key-work"}
+
+	var wg sync.WaitGroup
+	errs := make(chan error, 16)
+	for range 16 {
+		wg.Go(func() { errs <- SaveConfig(cfg) })
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, err := LoadConfig(); err != nil || got.Sessions["work"] == nil {
+		t.Fatalf("after concurrent saves: sessions %v, err %v", got.Sessions, err)
 	}
 }
