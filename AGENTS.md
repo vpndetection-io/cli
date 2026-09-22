@@ -73,3 +73,13 @@ refuses it. Anything internal that wants the binary pulls the public image.
   `oapi-codegen/runtime` - so `go version -m` on a release binary is the set that
   ships. Releases are stripped, so whether a flagged symbol is actually linked
   takes `go tool nm` on an unstripped build for each affected GOOS.
+
+## Chocolatey state (2026-09-22)
+
+1.1.0 is the version in moderation. Its reviewer sent it back for a missing
+`<copyright>`, and it was re-pushed as 1.1.0 from `main` with
+`channel=chocolatey`, the release's archives and checksums untouched. 1.2.0 and
+1.3.0 were refused behind it (`403`) and are not on the site: once 1.1.0 is
+approved, push each the same way (`gh workflow run release.yml -f tag=v1.3.0 -f
+channel=chocolatey`). Re-running their tag runs' job instead packs a nuspec
+without the element, and the reviewer sends it back again.
