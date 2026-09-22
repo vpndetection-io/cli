@@ -80,6 +80,7 @@ refuses it. Anything internal that wants the binary pulls the public image.
 `<copyright>`, and it was re-pushed as 1.1.0 from `main` with
 `channel=chocolatey`, the release's archives and checksums untouched. 1.2.0 and
 1.3.0 were refused behind it (`403`) and are not on the site: once 1.1.0 is
-approved, push each the same way (`gh workflow run release.yml -f tag=v1.3.0 -f
-channel=chocolatey`). Re-running their tag runs' job instead packs a nuspec
-without the element, and the reviewer sends it back again.
+approved, push the LATEST tag the same way (`gh workflow run release.yml -f
+tag=v1.3.0 -f channel=chocolatey`; an older one only queues a superseded
+version). Re-running a tag run's job instead packs that tag's nuspec, which
+lacks the element, and the reviewer sends it back again.
