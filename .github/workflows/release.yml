@@ -6,13 +6,20 @@ name: Release
 on:
   push:
     tags: ['v*']
-  # So a flaky GitHub API does not cost a version number. Everything below is
-  # idempotent, and re-tagging to retry a transient 500 is worse than re-running.
+  # So a flaky GitHub API does not cost a version number: re-tagging to retry a
+  # transient 500 is worse than re-running. `all` rebuilds the archives and moves
+  # ghcr's `latest` and the tap, so it is for the NEWEST tag only. `chocolatey`
+  # re-pushes that package alone, packed from this branch rather than the tag.
   workflow_dispatch:
     inputs:
       tag:
         description: The tag to release, e.g. v0.2.0
         required: true
+      channel:
+        description: all, or chocolatey to re-push only that package for an existing release
+        type: choice
+        options: [all, chocolatey]
+        default: all
 
 permissions:
   contents: write
@@ -51,6 +58,8 @@ jobs:
 
   release:
     needs: version
+    # Skipped by a chocolatey-only dispatch, and with it every job that needs it.
+    if: github.event_name == 'push' || inputs.channel == 'all'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -86,6 +95,7 @@ jobs:
 
   docker:
     needs: version
+    if: github.event_name == 'push' || inputs.channel == 'all'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -167,8 +177,13 @@ jobs:
 
   chocolatey:
     needs: [version, release]
+    if: >-
+      ${{ !cancelled() && needs.version.result == 'success' &&
+      (needs.release.result == 'success' || inputs.channel == 'chocolatey') }}
     runs-on: windows-latest
     steps:
+      # No ref: a tag push packs the tag's tree and a dispatch this branch's, which
+      # is how a nuspec fix reaches a version moderation wants resubmitted as-is.
       - uses: actions/checkout@v7
       - name: Push the Chocolatey package
         env:

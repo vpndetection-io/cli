@@ -9,6 +9,7 @@
     <authors>Mslm Dev</authors>
     <projectUrl>https://vpndetection.io</projectUrl>
     <iconUrl>https://s3.vpndetection.io/vpndetection-public/brand/mark.svg</iconUrl>
+    <copyright>Copyright (c) 2025-now Mslm Dev</copyright>
     <licenseUrl>https://github.com/vpndetection-io/cli/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/vpndetection-io/cli</projectSourceUrl>
