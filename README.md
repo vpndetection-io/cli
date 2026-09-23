@@ -244,7 +244,7 @@ The same classifications, published as files you host yourself. Access is grante
 
 ```console
 $ vpndetection db list
-ID          NAME     LICENCE   STANDING   TERM
+ID          NAME     LICENSE   STANDING   TERM
 vpn_ip_v1   VPN IP   standard  licensed   renews 2027-01-04
 
 $ vpndetection db metadata vpn_ip_v1

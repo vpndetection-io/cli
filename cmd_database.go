@@ -146,7 +146,7 @@ func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) erro
 		return nil
 	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tNAME\tLICENCE\tSTANDING\tTERM")
+	fmt.Fprintln(w, "ID\tNAME\tLICENSE\tSTANDING\tTERM")
 	for _, d := range items {
 		for _, v := range d.Versions {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
