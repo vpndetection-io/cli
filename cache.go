@@ -130,28 +130,10 @@ func (c *Cache) Get(ip string) *vpndetection.Result {
 	return found.Result
 }
 
-// Put stores an answer.
+// PutBatch stores many answers in one transaction.
 //
 // Errors are swallowed by design. A full disk or a read-only home directory
 // should not fail a lookup that already succeeded.
-func (c *Cache) Put(ip string, result *vpndetection.Result) {
-	if c == nil || result == nil {
-		return
-	}
-	raw, err := json.Marshal(entry{Created: time.Now(), Result: result})
-	if err != nil {
-		return
-	}
-	_ = c.db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(c.bucket)
-		if b == nil {
-			return nil
-		}
-		return b.Put([]byte(ip), raw)
-	})
-}
-
-// PutBatch stores many answers in one transaction.
 //
 // bbolt starts a new mmap-backed write transaction per Update, so a bulk run
 // doing one per address is dominated by transaction overhead rather than by the

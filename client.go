@@ -67,31 +67,15 @@ func (c *Client) Close() {
 // HasKey reports whether this invocation is authenticated.
 func (c *Client) HasKey() bool { return c.key != "" }
 
-// Lookup classifies one address, from cache where possible.
-//
-// A bogon is answered by the SDK without a request and is not cached: it costs
-// nothing to recompute and would otherwise take a slot.
-func (c *Client) Lookup(ctx context.Context, ip string) (*vpndetection.Result, error) {
-	if c.api.IsBogon(ip) {
-		return c.api.Lookup(ctx, ip)
-	}
-	if hit := c.cache.Get(ip); hit != nil {
-		return hit, nil
-	}
-	result, err := c.api.Lookup(ctx, ip)
-	if err != nil {
-		return nil, err
-	}
-	c.cache.Put(ip, result)
-	return result, nil
-}
-
 // LookupBatch classifies many addresses, serving what it can from cache and
 // asking only for the rest.
 //
 // The SDK's batch keeps its own semantics - answers keyed by address,
 // duplicates collapsed, a failing address carrying its error rather than
 // failing the batch - so nothing here re-implements concurrency.
+//
+// A bogon is answered by the SDK without a request and is not cached: it costs
+// nothing to recompute and would otherwise take a slot.
 func (c *Client) LookupBatch(
 	ctx context.Context, ips []string,
 ) (map[string]vpndetection.BatchResult, error) {

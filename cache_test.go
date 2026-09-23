@@ -82,32 +82,26 @@ func TestCacheServesAnAnswerOnlyToTheKeyThatFetchedIt(t *testing.T) {
 		return client
 	}
 
+	const ip = "45.83.91.1"
 	hosting := true
-	answer := func(ip string) *vpndetection.Result {
-		return &vpndetection.Result{
-			LookupResponse: vpndetection.LookupResponse{IP: ip, IsHosting: &hosting},
-		}
-	}
 
-	// Both writers: Lookup stores through Put, LookupBatch through PutBatch.
 	maxTier := open("key-max")
-	maxTier.cache.Put("45.83.91.1", answer("45.83.91.1"))
-	maxTier.cache.PutBatch(map[string]*vpndetection.Result{"45.83.91.2": answer("45.83.91.2")})
+	maxTier.cache.PutBatch(map[string]*vpndetection.Result{
+		ip: {LookupResponse: vpndetection.LookupResponse{IP: ip, IsHosting: &hosting}},
+	})
 	maxTier.Close()
 
-	for _, ip := range []string{"45.83.91.1", "45.83.91.2"} {
-		freeTier := open("key-free")
-		leaked := freeTier.cache.Get(ip)
-		freeTier.Close()
-		if leaked != nil {
-			t.Errorf("%s: the free key was served the max key's cached answer", ip)
-		}
+	freeTier := open("key-free")
+	leaked := freeTier.cache.Get(ip)
+	freeTier.Close()
+	if leaked != nil {
+		t.Error("the free key was served the max key's cached answer")
+	}
 
-		again := open("key-max")
-		hit := again.cache.Get(ip)
-		again.Close()
-		if hit == nil || hit.IsHosting == nil {
-			t.Errorf("%s: the max key does not get its own cached answer back", ip)
-		}
+	again := open("key-max")
+	hit := again.cache.Get(ip)
+	again.Close()
+	if hit == nil || hit.IsHosting == nil {
+		t.Error("the max key does not get its own cached answer back")
 	}
 }
