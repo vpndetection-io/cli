@@ -6,7 +6,7 @@
 
 set -e
 
-VSN="${VSN:-1.3.1}"
+VSN="${VSN:-1.3.2}"
 
 # Go 1.27 builds the release and needs macOS 13 Ventura. 1.2.0, built on Go
 # 1.25, is the last release that runs on macOS 12.
