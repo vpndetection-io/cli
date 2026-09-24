@@ -73,15 +73,7 @@ refuses it. Anything internal that wants the binary pulls the public image.
   `oapi-codegen/runtime` - so `go version -m` on a release binary is the set that
   ships. Releases are stripped, so whether a flagged symbol is actually linked
   takes `go tool nm` on an unstripped build for each affected GOOS.
-
-## Chocolatey state (2026-09-22)
-
-1.1.0 is the version in moderation. Its reviewer sent it back for a missing
-`<copyright>`, and it was re-pushed as 1.1.0 from `main` with
-`channel=chocolatey`, the release's archives and checksums untouched. Every
-later tag's push is refused behind it (`403`) and none is on the site: once
-1.1.0 is approved, push the LATEST tag the same way (`gh workflow run
-release.yml -f tag=v<latest> -f channel=chocolatey`; an older one only queues a
-superseded version). Re-running a tag run's job instead packs that tag's
-nuspec, and every tag up to v1.3.0 lacks the element, so the reviewer would
-send it back again.
+- **Chocolatey has no 1.2.0 through 1.3.1.** Each push was refused (`403`) while
+  1.1.0, the first version, sat in moderation; once it was approved
+  (2026-09-24) only the latest tag, 1.3.2, went out. Every version still waits
+  for a human reviewer: `docs/cli/channel-windows.md`.
