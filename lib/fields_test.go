@@ -54,29 +54,17 @@ func TestAbsentIsNotFalse(t *testing.T) {
 	}
 }
 
-// An empty detail object is PRESENT and means its flag is false. Its keys are
-// therefore not absent, or the summary reports a plan as narrower than it is.
+// An empty detail object is PRESENT and means its flag is false, which is not
+// the answer a plan without that object gives.
 func TestEmptyObjectIsPresentNotAbsent(t *testing.T) {
 	max := flattenJSON(t, maxAnswer)
-
 	if c := max.Get("relay"); !c.Present || c.Text != "" {
 		t.Errorf("relay should be present and empty, got %+v", c)
 	}
-	for _, f := range max.Absent() {
-		if strings.HasPrefix(f, "relay.") {
-			t.Errorf("%s counted as absent, but relay arrived as an empty object", f)
-		}
-	}
-	// The free answer has no relay object at all, so its keys ARE absent.
+	// The free answer has no relay object at all.
 	free := flattenJSON(t, freeAnswer)
-	found := false
-	for _, f := range free.Absent() {
-		if f == "relay.provider" {
-			found = true
-		}
-	}
-	if !found {
-		t.Error("free: relay.provider should be absent")
+	if c := free.Get("relay"); c.Present {
+		t.Errorf("free: relay should be absent, got %+v", c)
 	}
 }
 

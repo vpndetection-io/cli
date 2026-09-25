@@ -183,28 +183,6 @@ func (r Record) Present() []string {
 	return append(out, extra...)
 }
 
-// Absent lists what this answer does NOT carry, which is what a reader needs in
-// order to not read a missing flag as a negative.
-//
-// A field whose detail object arrived EMPTY is not absent: the object is
-// present and says its flag is false, so counting its four keys as missing
-// would report a plan as narrower than it is.
-func (r Record) Absent() []string {
-	out := make([]string, 0)
-	for _, col := range Columns {
-		if _, ok := r[col]; ok {
-			continue
-		}
-		if obj, _, nested := strings.Cut(col, "."); nested {
-			if c, ok := r[obj]; ok && c.Present {
-				continue
-			}
-		}
-		out = append(out, col)
-	}
-	return out
-}
-
 // ValidateFields refuses a --field selection naming something that could never
 // exist, so a typo is an error rather than a column of blanks.
 //
