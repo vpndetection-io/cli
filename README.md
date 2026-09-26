@@ -1,4 +1,4 @@
-# [<img src="https://s3.vpndetection.io/vpndetection-public/brand/mark.svg" alt="VPNDetection" width="24"/>](https://vpndetection.io/) VPNDetection CLI
+# [<img src="https://s3.vpndetection.io/vpndetection-public/brand/mark.svg" alt="VPNDetection" height="28"/>](https://vpndetection.io/) VPNDetection CLI
 
 [![release](https://img.shields.io/github/v/release/vpndetection-io/cli)](https://github.com/vpndetection-io/cli/releases)
 [![license](https://img.shields.io/github/license/vpndetection-io/cli)](LICENSE)
