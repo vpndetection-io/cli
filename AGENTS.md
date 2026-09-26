@@ -51,8 +51,8 @@ refuses it. Anything internal that wants the binary pulls the public image.
   the new line's Ports notes first. The oldest macOS the build Go runs on (13
   Ventura for 1.27) is stated in three more places that move with it: the
   README, `dist/macos.sh` and the formula template's `depends_on macos:`.
-  `go.mod` is the floor, 1.26 like every Go module here
-  (`docs/sdk/go-releasing.md`), proven by ci.yml's 1.26 leg.
+  `go.mod` is the floor, 1.26 like every Go module here, proven by ci.yml's
+  1.26 leg.
 - **`windows/arm` is gone.** Go no longer supports 32-bit Windows on ARM, and
   asking for it fails the whole cross-compile run rather than skipping.
 - **bbolt takes an exclusive lock on the cache file.** A second invocation while
@@ -76,4 +76,4 @@ refuses it. Anything internal that wants the binary pulls the public image.
 - **Chocolatey has no 1.2.0 through 1.3.1.** Each push was refused (`403`) while
   1.1.0, the first version, sat in moderation; once it was approved
   (2026-09-24) only the latest tag, 1.3.2, went out. Every version still waits
-  for a human reviewer: `docs/cli/channel-windows.md`.
+  for a human reviewer.
