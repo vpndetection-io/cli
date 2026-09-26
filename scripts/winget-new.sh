@@ -8,7 +8,7 @@
 #
 # The release workflow's winget job (vedantmgoyal9/winget-releaser) can only
 # BUMP a package that already exists upstream - its first step exits 1 when
-# manifests/m/Mslm/VPNDetection is absent - so version one is submitted by
+# manifests/v/VPNDetection/CLI is absent - so version one is submitted by
 # hand, once, and this script refuses to run again after that. It writes the
 # three-file manifest komac would generate for a portable exe inside a .zip,
 # with checksums taken from the release's own artifacts, and opens the PR from
@@ -22,17 +22,17 @@ cd "$(dirname "$0")/.."
 VSN="${1:?usage: winget-new.sh <version>, e.g. 1.1.0}"
 VSN="${VSN#v}"
 
-ID="Mslm.VPNDetection"
+ID="VPNDetection.CLI"
 FORK="vpndetection-io/winget-pkgs"
 UPSTREAM="microsoft/winget-pkgs"
 SCHEMA_VSN="1.12.0"
 BRANCH="${ID}-${VSN}"
-DIR="manifests/m/Mslm/VPNDetection/${VSN}"
+DIR="manifests/v/VPNDetection/CLI/${VSN}"
 BASE="https://github.com/vpndetection-io/cli/releases/download/v${VSN}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-if gh api "repos/${UPSTREAM}/contents/manifests/m/Mslm/VPNDetection" > /dev/null 2>&1 ; then
+if gh api "repos/${UPSTREAM}/contents/manifests/v/VPNDetection/CLI" > /dev/null 2>&1 ; then
     echo "${ID} already exists upstream; later versions are the release workflow's job" >&2
     exit 1
 fi
@@ -96,8 +96,8 @@ cat > "${WORK}/${DIR}/${ID}.locale.en-US.yaml" <<EOF
 PackageIdentifier: ${ID}
 PackageVersion: ${VSN}
 PackageLocale: en-US
-Publisher: Mslm
-PublisherUrl: https://mslm.io
+Publisher: VPNDetection
+PublisherUrl: https://vpndetection.io
 PublisherSupportUrl: https://vpndetection.io/contact
 PrivacyUrl: https://vpndetection.io/privacy
 PackageName: VPNDetection CLI
