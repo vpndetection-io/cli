@@ -3,9 +3,9 @@
 The official CLI, a presentation layer over `github.com/vpndetection-io/sdk-go`.
 Public repo: `github.com/vpndetection-io/cli`, with gitea as a second push URL.
 
-Structure follows `github.com/ipinfo/cli` on purpose: a flat dispatch in
-`main.go`, one `cmd_<name>.go` per command, per-command completion predictors in
-`completions.go`, and output machinery in `lib/`.
+Structure: a flat dispatch in `main.go`, one `cmd_<name>.go` per command,
+per-command completion predictors in `completions.go`, and output machinery in
+`lib/`.
 
 ## The non-obvious parts
 
