@@ -62,16 +62,18 @@ func TestCacheBucketNormalizesBaseURL(t *testing.T) {
 }
 
 // The partition has to hold where the cache is used, not only in cacheBucket: a
-// NewClient that opened it under an empty key shares one bucket across every key.
-func TestCacheServesAnAnswerOnlyToTheKeyThatFetchedIt(t *testing.T) {
+// NewClient that opened it under an empty key shares one bucket across every key,
+// and one that dropped the base URL shares it across every deployment.
+func TestCacheServesAnAnswerOnlyToTheKeyAndHostThatFetchedIt(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	savedConfig, savedKey := gConfig, fKey
-	t.Cleanup(func() { gConfig, fKey = savedConfig, savedKey })
+	t.Setenv("VPNDETECTION_BASE_URL", "")
+	savedConfig, savedKey, savedBaseURL := gConfig, fKey, fBaseURL
+	t.Cleanup(func() { gConfig, fKey, fBaseURL = savedConfig, savedKey, savedBaseURL })
 	gConfig = NewConfig()
 
-	open := func(key string) *Client {
+	open := func(key, baseURL string) *Client {
 		t.Helper()
-		fKey = key
+		fKey, fBaseURL = key, baseURL
 		client, err := NewClient()
 		if err != nil {
 			t.Fatal(err)
@@ -85,20 +87,27 @@ func TestCacheServesAnAnswerOnlyToTheKeyThatFetchedIt(t *testing.T) {
 	const ip = "45.83.91.1"
 	hosting := true
 
-	maxTier := open("key-max")
+	maxTier := open("key-max", "")
 	maxTier.cache.PutBatch(map[string]*vpndetection.Result{
 		ip: {LookupResponse: vpndetection.LookupResponse{IP: ip, IsHosting: &hosting}},
 	})
 	maxTier.Close()
 
-	freeTier := open("key-free")
+	freeTier := open("key-free", "")
 	leaked := freeTier.cache.Get(ip)
 	freeTier.Close()
 	if leaked != nil {
 		t.Error("the free key was served the max key's cached answer")
 	}
 
-	again := open("key-max")
+	elsewhere := open("key-max", "https://api.example.com")
+	leaked = elsewhere.cache.Get(ip)
+	elsewhere.Close()
+	if leaked != nil {
+		t.Error("another deployment was served the default one's cached answer")
+	}
+
+	again := open("key-max", "")
 	hit := again.cache.Get(ip)
 	again.Close()
 	if hit == nil || hit.IsHosting == nil {
