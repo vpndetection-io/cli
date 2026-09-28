@@ -6,7 +6,7 @@
 
 set -e
 
-VSN="${VSN:-1.3.2}"
+VSN="${VSN:-1.3.3}"
 case "$(uname -m)" in
     x86_64)  ARCH=amd64 ;;
     i386|i686) ARCH=386 ;;
