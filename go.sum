@@ -35,8 +35,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/vpndetection-io/sdk-go/v5 v5.4.2 h1:96YDVTl6Ujka0n/PUR1UvUNCq3B3x94msNY3WDhX4yQ=
-github.com/vpndetection-io/sdk-go/v5 v5.4.2/go.mod h1:03ayei94F2n8xifGOcMStqrEwq2iB0HY/PcR7bRDWUs=
+github.com/vpndetection-io/sdk-go/v5 v5.4.3 h1:ETFAVLVH1+vdGCWrSeXWE3Y/cR8VsyaQr3fo8//FTx0=
+github.com/vpndetection-io/sdk-go/v5 v5.4.3/go.mod h1:03ayei94F2n8xifGOcMStqrEwq2iB0HY/PcR7bRDWUs=
 go.etcd.io/bbolt v1.5.0 h1:S7GAl7Fxv12yohbwFfIbQCGDWbQbtDGPET4P/bD4lxU=
 go.etcd.io/bbolt v1.5.0/go.mod h1:mkltfYE5aUHQxUct9N9V+Kp7aSjFqjgrhcXIS70Lrdk=
 golang.org/x/sync v0.23.0 h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=
