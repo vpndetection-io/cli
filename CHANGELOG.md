@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.3.4 - 2026-09-29
+
+### Fixes
+
+- Take sdk-go v5.4.3: answer 26 more reserved ranges as bogons ([`60961f4`](https://github.com/vpndetection-io/cli/commit/60961f4886a09a7d7594a48a23cdd6c627bb180d))
+
 ## 1.3.3 - 2026-09-28
 
 ### Fixes
