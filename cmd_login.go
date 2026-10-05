@@ -143,7 +143,7 @@ func cmdLogin() error {
 
 // promptKey reads a key from the terminal without echoing it.
 func promptKey() (string, error) {
-	if !isTerminal(os.Stdin) {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		// Reading a key from a pipe would work and would also mean the key came
 		// from somewhere that probably logged it. --key is the explicit way.
 		return "", errors.New("no terminal to prompt on; pass --key or set VPNDETECTION_API_KEY")
