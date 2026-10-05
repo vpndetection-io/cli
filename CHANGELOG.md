@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.3.5 - 2026-10-05
+
+### Fixes
+
+- Refuse to prompt for a key when stdin is /dev/null ([`fdaa4b3`](https://github.com/vpndetection-io/cli/commit/fdaa4b3591b09f4d19d951abe22427087d06d0ae))
+
 ## 1.3.4 - 2026-09-29
 
 ### Fixes
