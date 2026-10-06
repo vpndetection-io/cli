@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.3.6 - 2026-10-06
+
+### Fixes
+
+- Take libgo-iputil v1.1.2: bulk no longer prompts when stdin is /dev/null ([`a072ed5`](https://github.com/vpndetection-io/cli/commit/a072ed5da4aca5aeaaae4fe0ecdf3c23db4dec3c))
+
 ## 1.3.5 - 2026-10-05
 
 ### Fixes
