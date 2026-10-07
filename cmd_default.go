@@ -114,10 +114,11 @@ func cmdDefault() error {
 		return err
 	}
 
-	// No arguments and a terminal on standard input means nobody piped
-	// anything and nobody named an address: that is a request for help, not an
-	// invitation to sit waiting on a tty.
-	if len(args) == 0 && isTerminal(os.Stdin) {
+	// No address named and nothing piped or redirected in is a request for
+	// help. Standard input is then a device: a terminal, not to be left waiting
+	// on, or the null device a service, a `docker run` without -i and nohup are
+	// given.
+	if len(args) == 0 && isDevice(os.Stdin) {
 		printHelpDefault()
 		return nil
 	}
@@ -131,9 +132,11 @@ func cmdDefault() error {
 	return err
 }
 
-// isTerminal reports whether a file is attached to a terminal rather than a
-// pipe or a redirect.
-func isTerminal(f *os.File) bool {
+// isDevice reports whether a file is a character device, such as a terminal or
+// the null device, rather than a pipe or a file: exactly what the default
+// command's input reader leaves unread. The file mode, not term.IsTerminal,
+// because the null device gets the help too.
+func isDevice(f *os.File) bool {
 	st, err := f.Stat()
 	if err != nil {
 		return false
