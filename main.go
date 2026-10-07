@@ -75,6 +75,10 @@ func main() {
 		err = cmdDefault()
 	}
 
+	if err == errUnanswered {
+		// Each unanswered address carries its error in the output already.
+		os.Exit(1)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "err: %v\n", err)
 		os.Exit(1)

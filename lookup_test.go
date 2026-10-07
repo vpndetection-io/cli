@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -52,9 +53,12 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	for i := range addrs {
 		addrs[i] = fmt.Sprintf("9.1.%d.%d", i/256, i%256)
 	}
-	out := captureStdout(t, func() error {
+	out, err := captureStdout(t, func() error {
 		return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL, forceBulk: true})
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if n := batches.Load(); n != 3 {
 		t.Errorf("sent %d POST /batch request(s), want 3 for %d addresses", n, len(addrs))
@@ -87,9 +91,44 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	}
 }
 
+// A lookup exits 1 when any address went unanswered, so a refused key or a
+// spent allowance fails a script, and the output stays what it was: every
+// answer, and each failure in place of its address's answer.
+func TestLookupReportsAnUnansweredAddress(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"results": {"1.1.1.1": {"ip": "1.1.1.1", "is_vpn": false}},`+
+			` "errors": {"2.2.2.2": {"status": 429, "error": "quota exceeded"}}}`)
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	out, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), []string{"1.1.1.1", "2.2.2.2"}, lookupOpts{format: lib.FormatJSONL})
+	})
+	if err != errUnanswered {
+		t.Errorf("runLookup = %v, want errUnanswered", err)
+	}
+	written, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"ip":"1.1.1.1","is_vpn":false,"is_bogon":false}` + "\n" +
+		`{"error":"vpndetection: quota_exceeded (HTTP 429): quota exceeded","ip":"2.2.2.2"}` + "\n"
+	if string(written) != want {
+		t.Errorf("wrote\n%s\nwant\n%s", written, want)
+	}
+}
+
 // captureStdout runs fn with os.Stdout pointed at a file, and returns that file
-// rewound for reading.
-func captureStdout(t *testing.T, fn func() error) *os.File {
+// rewound for reading, with fn's error.
+func captureStdout(t *testing.T, fn func() error) (*os.File, error) {
 	t.Helper()
 	file, err := os.CreateTemp(t.TempDir(), "stdout")
 	if err != nil {
@@ -99,13 +138,10 @@ func captureStdout(t *testing.T, fn func() error) *os.File {
 
 	saved := os.Stdout
 	os.Stdout = file
-	err = fn()
+	fnErr := fn()
 	os.Stdout = saved
-	if err != nil {
-		t.Fatal(err)
-	}
 	if _, err := file.Seek(0, 0); err != nil {
 		t.Fatal(err)
 	}
-	return file
+	return file, fnErr
 }

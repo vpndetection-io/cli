@@ -52,9 +52,10 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 	defer client.Close()
 
 	var (
-		chunk   []string
-		writer  lib.Writer
-		flushed bool
+		chunk      []string
+		writer     lib.Writer
+		flushed    bool
+		unanswered bool
 	)
 
 	// Buffered until the shape is known, because the format depends on the
@@ -96,6 +97,7 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 				continue
 			}
 			if answer.Err != nil {
+				unanswered = true
 				if err := writer.WriteError(ip, answer.Err); err != nil {
 					return err
 				}
@@ -129,11 +131,20 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 	if err := writer.Close(); err != nil {
 		return err
 	}
+	if unanswered {
+		return errUnanswered
+	}
 	return nil
 }
 
 // errNoInput is returned when the command found nothing to look up.
 var errNoInput = errors.New("no addresses in input")
+
+// errUnanswered is returned once every answer is written, when at least one
+// address got its error in place of an answer. It only sets the exit status,
+// so that a refused key or a spent allowance fails a script rather than
+// reading as an answer.
+var errUnanswered = errors.New("not every address was answered")
 
 // writeOne renders one answer in the chosen format.
 func writeOne(ip string, result *vpndetection.Result, opts lookupOpts) error {

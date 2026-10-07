@@ -201,6 +201,15 @@ Bulk runs stream: nothing is held in memory beyond one batch, so a `/8` is a lon
 
 Output formats are `--pretty`, `--json`, `--jsonl`, `--csv` and `--yaml`.
 
+### Exit status
+
+A lookup exits 1 when any address could not be answered, and 0 when every one was. Whatever went wrong - a key the API refused, a spent allowance, the API out of reach - that address gets its error in the output, in place of its answer, and every other address is answered as usual. A script that can live with gaps adds `|| true` and finds them in the output:
+
+```console
+$ vpndetection bulk addresses.txt --jsonl > answers.jsonl || true
+$ jq -r 'select(.error) | .ip' answers.jsonl
+```
+
 ### Sessions
 
 Credentials are stored in named sessions, so one machine can hold several organizations' keys and switch between them without logging in again:

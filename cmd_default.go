@@ -21,6 +21,9 @@ Description:
   arguments and standard input at the same time. One address prints a readable
   block; anything resolving to more than one prints JSON.
 
+  An address that could not be answered gets its error in the output, in
+  place of an answer, and the command then exits 1.
+
   It works with no account at all: the free tier answers 'ip' and 'is_vpn'.
 
 Examples:

@@ -17,6 +17,9 @@ Description:
   wants: one address still prints the machine format rather than the readable
   block.
 
+  An address that could not be answered gets its error in the output, and the
+  command then exits 1, so a script can tell.
+
   With no arguments and a terminal, it reads addresses typed one per line and
   stops at a blank line.
 
