@@ -21,7 +21,7 @@ Description:
   Create one with '%[1]s login --session <name>'.
 
 Examples:
-  $ %[1]s session                    # same as 'session list'
+  $ %[1]s session list
   $ %[1]s session use work
   $ %[1]s session show acme
   $ %[1]s session rename work acme
@@ -37,12 +37,9 @@ func cmdSession() error {
 	globalFlags()
 	args := parseSubFlags()
 
-	if fHelp {
+	if fHelp || len(args) == 0 {
 		printHelpSession()
 		return nil
-	}
-	if len(args) == 0 {
-		return sessionList()
 	}
 
 	switch strings.ToLower(args[0]) {
