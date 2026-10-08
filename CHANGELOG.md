@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.5.0 - 2026-10-08
+
+### Breaking changes
+
+- Print help for a bare session, as for every other command group ([`087dd4c`](https://github.com/vpndetection-io/cli/commit/087dd4c229fb1188c6b620bfb4dd3d5c0966ae1c))
+
 ## 1.4.0 - 2026-10-07
 
 ### Fixes
