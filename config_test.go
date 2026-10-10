@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -185,6 +187,47 @@ func TestSaveConfigKeepsAFileItCannotRead(t *testing.T) {
 	}
 	if body, _ := os.ReadFile(path); string(body) != stored {
 		t.Errorf("the file was rewritten: %q", body)
+	}
+}
+
+// A config another account can open is refused, as ssh refuses a private key:
+// a session's base URL is where every key on this machine is sent, so whoever
+// can edit the file can collect them, and whoever can write its directory can
+// replace it.
+func TestLoadConfigRefusesWhatOthersCanOpen(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows keeps no permission bits to read")
+	}
+	for _, tt := range []struct {
+		name          string
+		file, dir     os.FileMode
+		wantRefusedOn string
+	}{
+		{"a file others can read", 0o644, 0o700, "chmod 600"},
+		{"a file others can write", 0o622, 0o700, "chmod 600"},
+		{"a directory others can write", 0o600, 0o777, "chmod 700"},
+		{"a directory its group can write", 0o600, 0o770, "chmod 700"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+			if err := SaveConfig(NewConfig()); err != nil {
+				t.Fatal(err)
+			}
+			path, _ := ConfigPath()
+			if err := os.Chmod(path, tt.file); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chmod(filepath.Dir(path), tt.dir); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = os.Chmod(filepath.Dir(path), 0o700) })
+			if _, err := LoadConfig(); err == nil || !strings.Contains(err.Error(), tt.wantRefusedOn) {
+				t.Errorf("LoadConfig() = %v, want a refusal naming %q", err, tt.wantRefusedOn)
+			}
+			if err := SaveConfig(NewConfig()); err == nil {
+				t.Error("SaveConfig wrote into a config it refuses to read")
+			}
+		})
 	}
 }
 

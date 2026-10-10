@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -138,6 +139,9 @@ func LoadConfig() (Config, error) {
 
 // readConfig parses the config file at path.
 func readConfig(path string) (Config, error) {
+	if err := private(path); err != nil {
+		return Config{}, err
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, err
@@ -150,6 +154,30 @@ func readConfig(path string) (Config, error) {
 		cfg.Sessions = map[string]*Session{}
 	}
 	return cfg, nil
+}
+
+// private refuses a config file other accounts can open, or one in a directory
+// they can write, the way ssh refuses a private key: a session's base URL is
+// where every key this machine uses is sent, so whoever can edit the file can
+// collect them. This CLI writes 0600 inside 0700, so a wider mode was set from
+// outside. Windows keeps no such bits.
+func private(path string) error {
+	st, err := os.Stat(path)
+	if err != nil || runtime.GOOS == "windows" {
+		return err
+	}
+	if perm := st.Mode().Perm(); perm&0o077 != 0 {
+		return fmt.Errorf("%s is open to other accounts (mode %04o); run `chmod 600 %s`", path, perm, path)
+	}
+	dir := filepath.Dir(path)
+	dst, err := os.Stat(dir)
+	if err != nil {
+		return err
+	}
+	if perm := dst.Mode().Perm(); perm&0o022 != 0 {
+		return fmt.Errorf("%s is writable by other accounts (mode %04o); run `chmod 700 %s`", dir, perm, dir)
+	}
+	return nil
 }
 
 // SaveConfig writes the config back, readable only by its owner.
