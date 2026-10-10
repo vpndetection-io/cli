@@ -46,6 +46,28 @@ func TestResolveKeyPrecedence(t *testing.T) {
 	}
 }
 
+// A key given for one run arrives the way a shell hands it over, and the CR a
+// key file saved on Windows leaves on the end must not reach the header.
+func TestResolveKeyTrimsWhatARunIsGiven(t *testing.T) {
+	t.Cleanup(func() { fKey = "" })
+	cfg := NewConfig()
+
+	fKey = ""
+	t.Setenv("VPNDETECTION_API_KEY", "mk_from_env\r\n")
+	if key, _ := cfg.ResolveKey(); key != "mk_from_env" {
+		t.Errorf("from the environment: got %q", key)
+	}
+	fKey = " mk_from_flag\r"
+	if key, _ := cfg.ResolveKey(); key != "mk_from_flag" {
+		t.Errorf("from --key: got %q", key)
+	}
+	// Whitespace alone is no key, so the next source answers.
+	fKey = " "
+	if key, src := cfg.ResolveKey(); key != "mk_from_env" || src != "VPNDETECTION_API_KEY" {
+		t.Errorf("a blank --key: got %q from %q", key, src)
+	}
+}
+
 func TestResolveSessionPrecedence(t *testing.T) {
 	cfg := NewConfig()
 	cfg.Sessions["a"] = &Session{Key: "ka"}

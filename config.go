@@ -232,12 +232,16 @@ func (c Config) ActiveSessionName() string {
 // stored state, and no key at all is a valid answer rather than an error - the
 // free tier needs none. A command that genuinely requires one says so itself,
 // with a message naming how to get one.
+//
+// A key given for one run is trimmed, as login trims what it stores: it goes
+// out as a header value, and the CR a key file saved on Windows leaves behind
+// fails as a network error, retried, rather than as a bad key.
 func (c Config) ResolveKey() (key string, source string) {
-	if fKey != "" {
-		return fKey, "--key"
+	if key := strings.TrimSpace(fKey); key != "" {
+		return key, "--key"
 	}
-	if env := os.Getenv("VPNDETECTION_API_KEY"); env != "" {
-		return env, "VPNDETECTION_API_KEY"
+	if key := strings.TrimSpace(os.Getenv("VPNDETECTION_API_KEY")); key != "" {
+		return key, "VPNDETECTION_API_KEY"
 	}
 	if s := c.ActiveSession(); s != nil && s.Key != "" {
 		return s.Key, "session " + c.ActiveSessionName()
