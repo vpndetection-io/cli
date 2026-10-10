@@ -47,9 +47,13 @@ refuses it. Anything internal that wants the binary pulls the public image.
 ## Gotchas hit building it
 
 - **Two Go versions: the BUILD and the FLOOR.** The Dockerfile, `release.yml`,
-  and ci.yml's cross and govulncheck legs build on 1.27; move all four together
-  when it leaves support, since govulncheck judges the Go that ships, and read
-  the new line's Ports notes first. The oldest macOS the build Go runs on (13
+  and ci.yml's cross and govulncheck legs build on an exact patch, 1.27.2; move
+  all four together, since govulncheck judges the Go that ships. A Go patch
+  that fixes an advisory reachable here is that bump plus a patch release, with
+  no code change and nobody's review: an unpinned build would ship it only with
+  the next tag, and a scanner reading the installed binaries lists the
+  advisories until then. A new LINE moves them too, once the old one leaves
+  support; read its Ports notes first. The oldest macOS the build Go runs on (13
   Ventura for 1.27) is stated in three more places that move with it: the
   README, `dist/macos.sh` and the formula template's `depends_on macos:`.
   `go.mod` is the floor, 1.26 like every Go module here, proven by ci.yml's
