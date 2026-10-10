@@ -77,6 +77,19 @@ jobs:
       - name: Build and package
         run: ./scripts/build-archive-all.sh "${{ needs.version.outputs.version }}"
 
+      # go test ran the source, and the archives are built after it with flags
+      # of their own, so nothing else here runs a binary anyone downloads: the
+      # one this runner can execute is run out of the archive that ships it.
+      - name: Run the linux/amd64 binary from its archive
+        run: |
+          vsn="${{ needs.version.outputs.version }}"
+          tar -xzf "build/vpndetection_${vsn}_linux_amd64.tar.gz" -C "$RUNNER_TEMP"
+          got="$("$RUNNER_TEMP/vpndetection" version)"
+          if [ "$got" != "$vsn" ] ; then
+            echo "the linux/amd64 archive's binary reports ${got}, not ${vsn}" >&2
+            exit 1
+          fi
+
       - name: Stamp the installers with this version
         run: |
           vsn="${{ needs.version.outputs.version }}"
