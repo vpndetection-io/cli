@@ -27,7 +27,8 @@ Description:
   several organizations and switch between them with
   '%[1]s session use <name>'.
 
-  Pass a key directly and it is stored as-is, which is what a CI job wants.
+  Pass a key directly and it is stored as-is. A CI job needs no login: set
+  VPNDETECTION_API_KEY in its environment, and nothing is stored.
 
 Examples:
   # Sign in through the browser (the usual way).
@@ -52,8 +53,9 @@ Options:
   --base-url <url>
     API this session talks to, for a non-production deployment.
   --key <key>, -k <key>
-    the key, instead of being prompted. Your shell records this; prefer the
-    prompt.
+    the key, instead of being prompted. Your shell records it, and every
+    account on this machine can read it from the process list while this runs;
+    prefer the prompt.
   --no-check
     skip verifying the key against the API before storing it.
   --help, -h

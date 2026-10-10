@@ -55,7 +55,8 @@ Commands:
 Options:
   General:
     --key <key>, -k <key>
-      API key for this run, instead of the stored one.
+      API key for this run, instead of the stored one. Every account on this
+      machine can read it while it runs; prefer VPNDETECTION_API_KEY.
     --session <name>
       stored session to use for this run.
     --base-url <url>
