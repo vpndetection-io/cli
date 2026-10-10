@@ -128,15 +128,20 @@ func LoadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	data, err := os.ReadFile(path)
+	cfg, err := readConfig(path)
 	if os.IsNotExist(err) {
-		cfg := NewConfig()
+		cfg = NewConfig()
 		return cfg, SaveConfig(cfg)
 	}
+	return cfg, err
+}
+
+// readConfig parses the config file at path.
+func readConfig(path string) (Config, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, err
 	}
-
 	cfg := NewConfig()
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Config{}, fmt.Errorf("%s is not valid JSON: %w", path, err)
@@ -148,10 +153,16 @@ func LoadConfig() (Config, error) {
 }
 
 // SaveConfig writes the config back, readable only by its owner.
+//
+// It never replaces a file LoadConfig could not read: init carries on without
+// one, and the next login or setting saved over it would lose every key in it.
 func SaveConfig(cfg Config) error {
 	path, err := ConfigPath()
 	if err != nil {
 		return err
+	}
+	if _, err := readConfig(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("nothing was saved: %w", err)
 	}
 	cfg.Version = configVersion
 	data, err := json.MarshalIndent(cfg, "", "  ")

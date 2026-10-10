@@ -143,6 +143,29 @@ func TestLoadConfigRefusesToClobberGarbage(t *testing.T) {
 	}
 }
 
+// A save after a load that failed must not write over the file the load could
+// not read: init carries on with an empty config, and the first login or
+// setting saved from it would otherwise replace every stored key with its own.
+func TestSaveConfigKeepsAFileItCannotRead(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	path, err := ConfigPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const stored = `{"sessions": {"work": {"key": "mk_work"},}}`
+	if err := os.WriteFile(path, []byte(stored), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg := NewConfig()
+	cfg.Sessions["other"] = &Session{Key: "mk_other"}
+	if err := SaveConfig(cfg); err == nil {
+		t.Fatal("saved over a config that does not parse")
+	}
+	if body, _ := os.ReadFile(path); string(body) != stored {
+		t.Errorf("the file was rewritten: %q", body)
+	}
+}
+
 // The fingerprint is what partitions the cache, so its width is load-bearing:
 // two keys whose fingerprints collide share a bucket, and one is then served
 // the other's answer under a plan that need not carry the same fields.

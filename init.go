@@ -10,8 +10,8 @@ import (
 //
 // A failure is a warning rather than a fatal error: an unreadable config is a
 // reason to run unauthenticated, not a reason for `vpndetection 1.1.1.1` to
-// stop working. The one command that must not paper over it is `login`, which
-// checks again before it writes.
+// stop working. Nothing writes over it either: SaveConfig refuses to replace a
+// file LoadConfig could not read.
 func init() {
 	cfg, err := LoadConfig()
 	if err != nil {
