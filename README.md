@@ -126,10 +126,10 @@ Nothing is typed or pasted here, so the key never reaches your shell history. If
 
 `vpndetection signup` is the same thing with the sign-up page first, so a new account and a working CLI are one step.
 
-For a CI job, set the key in the job's environment instead. Every command reads `VPNDETECTION_API_KEY`, so nothing is stored on the runner, and the key never sits on a command line, where every account on the machine can read it from the process list:
+For a CI job, set `VPNDETECTION_API_KEY` in the job's environment from your CI's secret store instead. Every command reads it, so nothing is stored on the runner, and the key never sits on a command line, where every account on the machine can read it from the process list:
 
 ```console
-$ export VPNDETECTION_API_KEY=...    # from your CI's secret store
+$ export VPNDETECTION_API_KEY=...
 $ vpndetection 45.83.91.1
 ```
 
