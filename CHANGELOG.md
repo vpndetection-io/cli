@@ -2,6 +2,22 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.6.0 - 2026-10-10
+
+### Breaking changes
+
+- Refuse a config file other accounts can open, as ssh does ([`c3291af`](https://github.com/vpndetection-io/cli/commit/c3291af067d208ef6209f93dfbb6eab4a93504f1))
+
+### Fixes
+
+- Build on Go 1.27.2, which fixes eight standard-library advisories ([`287fe3c`](https://github.com/vpndetection-io/cli/commit/287fe3c135988d1c5f9815b7469113e9347b3919))
+- Never save over a config that could not be read ([`0b31fd4`](https://github.com/vpndetection-io/cli/commit/0b31fd4d976b95c0cb1b09106bf147345653fb64))
+- Trim a key given by --key or the environment, as login does ([`1846ae8`](https://github.com/vpndetection-io/cli/commit/1846ae81d8a0d19db476b57ea8cb7b91a513d04b))
+- Fail whoami --json with no key, rather than print prose ([`44f1ff5`](https://github.com/vpndetection-io/cli/commit/44f1ff58273abc3ed500161746874b3b80c8365c))
+- Point CI at VPNDETECTION_API_KEY, off the command line ([`3afd319`](https://github.com/vpndetection-io/cli/commit/3afd319742b4e64da3af802882dd7b17f0e55a25))
+- List --retries in database's help ([`acf5ea5`](https://github.com/vpndetection-io/cli/commit/acf5ea5d931c8bb341bac4451a972a5dde9c5fd0))
+- Take sdk-go v5.5.2: read a Retry-After as digits or a date only ([`6663d37`](https://github.com/vpndetection-io/cli/commit/6663d37aeb86bc6792ab2ff65266484e47c26b58))
+
 ## 1.5.0 - 2026-10-08
 
 ### Breaking changes
