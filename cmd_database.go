@@ -55,6 +55,8 @@ Options:
     write a download to standard output instead of a file, unverified.
   --no-verify
     skip the checksum check after downloading.
+  --retries <n>
+    retries per request.
   --json, -j
     output JSON instead of a table.
   --help, -h
