@@ -12,9 +12,6 @@ var formats = predict.Set([]string{"pretty", "json", "jsonl", "csv", "yaml"})
 // dbFormats is every file a database is published as.
 var dbFormats = predict.Set([]string{"csvgz", "mmdb"})
 
-// jsonFlags are the ones every command with a JSON form takes.
-var jsonFlags = map[string]complete.Predictor{"--json": predict.Nothing, "-j": predict.Nothing}
-
 // outputFlags are the ones every lookup command shares.
 func outputFlags() map[string]complete.Predictor {
 	return map[string]complete.Predictor{
@@ -87,19 +84,26 @@ var completions = &complete.Command{
 // cannot drift into offering different subcommands.
 var databaseCompletions = &complete.Command{
 	Sub: map[string]*complete.Command{
-		"list":     {Flags: jsonFlags},
-		"metadata": {},
+		"list": {Flags: map[string]complete.Predictor{
+			"--json": predict.Nothing, "-j": predict.Nothing, "--retries": predict.Something,
+		}},
+		"metadata": {Flags: map[string]complete.Predictor{"--retries": predict.Something}},
 		"checksum": {Flags: map[string]complete.Predictor{
 			"--format": dbFormats, "--json": predict.Nothing, "-j": predict.Nothing,
+			"--retries": predict.Something,
 		}},
-		"url": {Flags: map[string]complete.Predictor{"--format": dbFormats}},
+		"url": {Flags: map[string]complete.Predictor{
+			"--format": dbFormats, "--retries": predict.Something,
+		}},
 		"downloads": {Flags: map[string]complete.Predictor{
 			"--limit": predict.Something, "--json": predict.Nothing, "-j": predict.Nothing,
+			"--retries": predict.Something,
 		}},
 		"download": {Flags: map[string]complete.Predictor{
 			"--format":    dbFormats,
 			"--stdout":    predict.Nothing,
 			"--no-verify": predict.Nothing,
+			"--retries":   predict.Something,
 		}},
 	},
 }
@@ -129,7 +133,9 @@ var sessionCompletions = &complete.Command{
 }
 
 // whoamiCompletions is shared by `whoami` and its `entitlement` alias.
-var whoamiCompletions = &complete.Command{Flags: jsonFlags}
+var whoamiCompletions = &complete.Command{Flags: map[string]complete.Predictor{
+	"--json": predict.Nothing, "-j": predict.Nothing,
+}}
 
 // handleCompletions answers a shell completion request, if this is one.
 func handleCompletions() {
