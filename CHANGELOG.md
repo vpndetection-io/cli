@@ -2,6 +2,13 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.6.1 - 2026-10-11
+
+### Fixes
+
+- Say what --show-absent does, now that nothing is listed at the end ([`2952603`](https://github.com/vpndetection-io/cli/commit/29526033d72dd862a70f6c154221f88901a3dee9))
+- Complete --retries for database's subcommands ([`0934109`](https://github.com/vpndetection-io/cli/commit/0934109da91e1713b0bd190a010a567f68040caf))
+
 ## 1.6.0 - 2026-10-10
 
 ### Breaking changes
