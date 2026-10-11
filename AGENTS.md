@@ -66,13 +66,14 @@ refuses it. Anything internal that wants the binary pulls the public image.
   reason a lookup fails - but it does mean concurrent runs do not share it.
 - **A command lives in FOUR places, and changing one drifts the rest silently.**
   The dispatch `switch` in `main.go`, the `subcommands` map beside it,
-  `completions.go`, and the help text (plus the README). Nothing fails when they
-  disagree: `printHelpWhoami` shipped `$ vpndetection --session work me` for two
-  releases after `me` stopped being a command, and it answers "no addresses
-  found in the input" rather than naming an unknown command. Same shape on the
-  flag side - `login` grew `--paste` and `--no-browser` with the device flow
-  and completion was never taught them. After any surface change, diff `--help`
-  against `completions.go` against `subcommands`.
+  `completions.go`, and the help text (plus the README). `printHelpWhoami`
+  shipped `$ vpndetection --session work me` for two releases after `me`
+  stopped being a command, and it answers "no addresses found in the input"
+  rather than naming an unknown command. Only the flag side is gated:
+  `completions_test.go` fails when a help lists a flag its completion does not
+  offer, after `login`'s `--paste` and `--no-browser` and then `database`'s
+  `--retries` each shipped uncompleted. After any surface change, still diff
+  `--help` against `subcommands` and the README.
 - **Check an advisory against a release binary, not against `go.mod`.** Most of
   the module graph never links - gin and echo arrive through
   `oapi-codegen/runtime` - so `go version -m` on a release binary is the set that
