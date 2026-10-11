@@ -77,8 +77,8 @@ Options:
       only these fields, comma separated. Dotted for nested ones, as
       'vpn.provider'. Naming an object selects all of it.
     --show-absent
-      show the fields your plan does not include, rather than listing them
-      at the end.
+      also list the fields your plan does not include, each as '-', in the
+      readable block.
     --nocolor
       disable colored output.
 
