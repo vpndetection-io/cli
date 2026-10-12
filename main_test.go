@@ -9,6 +9,16 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// TestMain runs main itself when a test re-runs this binary, so a test can read
+// what a shell reads from it.
+func TestMain(m *testing.M) {
+	if os.Getenv("VPNDETECTION_TEST_RUN_MAIN") == "1" {
+		main()
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
+
 // A flag may come before the subcommand, and a flag VALUE that happens to spell
 // a subcommand must not be taken for one.
 func TestDetectCommand(t *testing.T) {

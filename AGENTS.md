@@ -69,10 +69,12 @@ refuses it. Anything internal that wants the binary pulls the public image.
   `completions.go`, and the help text (plus the README). `printHelpWhoami`
   shipped `$ vpndetection --session work me` for two releases after `me`
   stopped being a command, and it answers "no addresses found in the input"
-  rather than naming an unknown command. Only the flag side is gated:
-  `completions_test.go` fails when a help lists a flag its completion does not
-  offer, after `login`'s `--paste` and `--no-browser` and then `database`'s
-  `--retries` each shipped uncompleted. After any surface change, still diff
+  rather than naming an unknown command. Only the flag side is gated, by
+  `completions_test.go`: it fails when a help lists a flag its completion does
+  not offer, after `login`'s `--paste` and `--no-browser` and then `database`'s
+  `--retries` each shipped uncompleted, and when completion and `valueFlags`
+  disagree on whether a flag takes a value, which since libgo-complete 1.0.2
+  decides what is offered after it. After any surface change, still diff
   `--help` against `subcommands` and the README.
 - **Check an advisory against a release binary, not against `go.mod`.** Most of
   the module graph never links - gin and echo arrive through
