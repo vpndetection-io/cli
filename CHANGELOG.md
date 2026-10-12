@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.6.2 - 2026-10-12
+
+### Fixes
+
+- Take libgo-complete v1.0.2: offer options again after a boolean flag ([`b3a6d13`](https://github.com/vpndetection-io/cli/commit/b3a6d1333c3d636830a0ce01ececf8bda95931f7))
+
 ## 1.6.1 - 2026-10-11
 
 ### Fixes
