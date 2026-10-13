@@ -294,6 +294,24 @@ func TestPrettyOmitsAbsentAndSaysNothingAboutIt(t *testing.T) {
 	}
 }
 
+// An empty string prints as "", never as the {} that says a flag is false: the
+// tor dataset carries no provider, and an unattributed VPN range has none.
+func TestPrettyTellsAnEmptyStringFromAnEmptyObject(t *testing.T) {
+	got := render(t, FormatPretty, Opts{}, `{"ip":"1.1.1.1","is_vpn":false,"is_tor":true,`+
+		`"vpn":{},"tor":{"provider":"","confidence":"high","last_seen":"2026-09-12"}}`)
+	values := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(got), "\n") {
+		name, value, _ := strings.Cut(line, " ")
+		values[name] = strings.TrimSpace(value)
+	}
+	if values["tor.provider"] != `""` {
+		t.Errorf("tor.provider = %q, want \"\"\n%s", values["tor.provider"], got)
+	}
+	if values["vpn"] != "{}" {
+		t.Errorf("vpn = %q, want {}\n%s", values["vpn"], got)
+	}
+}
+
 func TestPrettyShowAbsent(t *testing.T) {
 	got := render(t, FormatPretty, Opts{ShowAbsent: true}, freeAnswer)
 	if !strings.Contains(got, "is_hosting") {

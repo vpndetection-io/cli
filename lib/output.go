@@ -401,9 +401,13 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 		switch {
 		case text == "true":
 			rendered = yes.Sprint(text)
-		case text == "":
+		case cell.EmptyObject:
 			// A present-but-empty detail object says its flag is false.
 			rendered = faint.Sprint("{}")
+		case text == "":
+			// A present empty string, as the provider of a range the dataset
+			// attributes to nobody, is not an empty object.
+			rendered = faint.Sprint(`""`)
 		case !cell.Present:
 			rendered = faint.Sprint(text)
 		}

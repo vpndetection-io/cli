@@ -55,6 +55,9 @@ var Flags = []string{
 type Cell struct {
 	Text    string
 	Present bool
+	// EmptyObject is a detail object that arrived as {}, which says the flag
+	// above it is false. Its Text is "", as a present empty string's is.
+	EmptyObject bool
 }
 
 // Record is one answer flattened to dotted field names.
@@ -103,7 +106,7 @@ func walk(rec Record, prefix string, tree map[string]any) {
 			// above it is false. Recorded as a present-but-empty cell so it can
 			// be told apart from a detail object the plan does not include.
 			if len(sub) == 0 {
-				rec[key] = Cell{Present: true}
+				rec[key] = Cell{Present: true, EmptyObject: true}
 				continue
 			}
 			walk(rec, key, sub)
