@@ -75,14 +75,27 @@ func NewWriter(w io.Writer, f Format, opts Opts) Writer {
 	case FormatCSV:
 		return &csvWriter{w: csv.NewWriter(w), opts: opts}
 	case FormatJSONL:
-		return &jsonlWriter{w: w}
+		return &jsonlWriter{w: w, fields: opts.Fields}
 	case FormatYAML:
-		return &yamlWriter{w: w, answers: map[string]any{}}
+		return &yamlWriter{w: w, fields: opts.Fields, answers: map[string]any{}}
 	case FormatPretty:
 		return &prettyWriter{w: w, opts: opts}
 	default:
-		return &jsonWriter{w: w}
+		return &jsonWriter{w: w, fields: opts.Fields}
 	}
+}
+
+// selected is what a --field selection keeps of an answer, or the answer as it
+// came when nothing was selected, so that output stays what it always was.
+func selected(v any, fields []string) (any, error) {
+	if len(fields) == 0 {
+		return v, nil
+	}
+	tree, err := asTree(v)
+	if err != nil {
+		return nil, err
+	}
+	return selectFields(tree, fields), nil
 }
 
 // jsonWriter emits one object keyed by address, written incrementally.
@@ -90,12 +103,19 @@ func NewWriter(w io.Writer, f Format, opts Opts) Writer {
 // The shape matches what the reference CLI produces, but the bytes go out as
 // each answer arrives rather than from a map built in memory first.
 type jsonWriter struct {
-	w     io.Writer
-	count int
-	err   error
+	w      io.Writer
+	fields []string
+	count  int
+	err    error
 }
 
-func (j *jsonWriter) Write(ip string, v any) error { return j.emit(ip, v) }
+func (j *jsonWriter) Write(ip string, v any) error {
+	v, err := selected(v, j.fields)
+	if err != nil {
+		return err
+	}
+	return j.emit(ip, v)
+}
 
 func (j *jsonWriter) WriteError(ip string, err error) error {
 	return j.emit(ip, map[string]string{"error": err.Error()})
@@ -138,19 +158,32 @@ func (j *jsonWriter) Close() error {
 }
 
 // jsonlWriter emits one compact object per line.
-type jsonlWriter struct{ w io.Writer }
+type jsonlWriter struct {
+	w      io.Writer
+	fields []string
+}
 
 func (j *jsonlWriter) Write(_ string, v any) error {
+	v, err := selected(v, j.fields)
+	if err != nil {
+		return err
+	}
+	return j.emit(v)
+}
+
+// WriteError is never narrowed by a selection: an error is not an answer, and
+// its line has to say which address it belongs to whatever was selected.
+func (j *jsonlWriter) WriteError(ip string, err error) error {
+	return j.emit(map[string]string{"ip": ip, "error": err.Error()})
+}
+
+func (j *jsonlWriter) emit(v any) error {
 	body, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
 	_, err = fmt.Fprintf(j.w, "%s\n", body)
 	return err
-}
-
-func (j *jsonlWriter) WriteError(ip string, err error) error {
-	return j.Write(ip, map[string]string{"ip": ip, "error": err.Error()})
 }
 
 func (j *jsonlWriter) Close() error { return nil }
@@ -234,6 +267,7 @@ func (c *csvWriter) Close() error {
 // a large run rather than silently made to look like the others.
 type yamlWriter struct {
 	w       io.Writer
+	fields  []string
 	answers map[string]any
 }
 
@@ -245,6 +279,9 @@ func (y *yamlWriter) Write(ip string, v any) error {
 	tree, err := asTree(v)
 	if err != nil {
 		return err
+	}
+	if len(y.fields) > 0 {
+		tree = selectFields(tree, y.fields)
 	}
 	y.answers[ip] = tree
 	return nil

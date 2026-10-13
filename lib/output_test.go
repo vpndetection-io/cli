@@ -150,31 +150,36 @@ func TestJSONLIsOnePerLine(t *testing.T) {
 // detail object as {}. The answer arrives as the SDK's Result here, as it does
 // from a lookup, because a body decoded into maps cannot show the difference.
 func TestYAMLSaysWhatJSONSays(t *testing.T) {
+	selections := []Opts{{}, {Fields: []string{"ip", "is_tor", "vpn.provider", "relay.provider", "hosting"}}}
 	for _, body := range []string{freeAnswer, maxAnswer} {
 		var answer vpndetection.Result
 		if err := json.Unmarshal([]byte(body), &answer); err != nil {
 			t.Fatal(err)
 		}
-		var fromJSON, fromYAML map[string]any
-		if err := json.Unmarshal([]byte(renderAnswer(t, FormatJSON, &answer)), &fromJSON); err != nil {
-			t.Fatal(err)
-		}
-		asYAML := renderAnswer(t, FormatYAML, &answer)
-		if err := yaml.Unmarshal([]byte(asYAML), &fromYAML); err != nil {
-			t.Fatal(err)
-		}
-		wantJSON, _ := json.Marshal(fromJSON)
-		gotJSON, _ := json.Marshal(fromYAML)
-		if string(gotJSON) != string(wantJSON) {
-			t.Errorf("YAML differs from JSON:\n%s\nreads as %s\nwant %s", asYAML, gotJSON, wantJSON)
+		for _, opts := range selections {
+			var fromJSON, fromYAML map[string]any
+			asJSON := renderAnswer(t, FormatJSON, opts, &answer)
+			if err := json.Unmarshal([]byte(asJSON), &fromJSON); err != nil {
+				t.Fatal(err)
+			}
+			asYAML := renderAnswer(t, FormatYAML, opts, &answer)
+			if err := yaml.Unmarshal([]byte(asYAML), &fromYAML); err != nil {
+				t.Fatal(err)
+			}
+			wantJSON, _ := json.Marshal(fromJSON)
+			gotJSON, _ := json.Marshal(fromYAML)
+			if string(gotJSON) != string(wantJSON) {
+				t.Errorf("-f %v: YAML differs from JSON:\n%s\nreads as %s\nwant %s",
+					opts.Fields, asYAML, gotJSON, wantJSON)
+			}
 		}
 	}
 }
 
-func renderAnswer(t *testing.T, format Format, answer *vpndetection.Result) string {
+func renderAnswer(t *testing.T, format Format, opts Opts, answer *vpndetection.Result) string {
 	t.Helper()
 	var out strings.Builder
-	w := NewWriter(&out, format, Opts{})
+	w := NewWriter(&out, format, opts)
 	if err := w.Write(answer.IP, answer); err != nil {
 		t.Fatal(err)
 	}
@@ -182,6 +187,95 @@ func renderAnswer(t *testing.T, format Format, answer *vpndetection.Result) stri
 		t.Fatal(err)
 	}
 	return out.String()
+}
+
+// --field narrows every format, not CSV alone: each keeps the fields named and
+// nothing else, and the formats that print an object keep the answer's nesting.
+func TestFieldSelectsInEveryFormat(t *testing.T) {
+	opts := Opts{Fields: []string{"ip", "is_vpn", "vpn.provider", "hosting"}}
+	cases := []struct {
+		format Format
+		want   string
+	}{
+		{FormatJSON, `{
+  "146.70.22.220": {
+    "hosting": {
+      "confidence": "high",
+      "last_seen": "2026-09-11",
+      "provider": "m247"
+    },
+    "ip": "146.70.22.220",
+    "is_vpn": true,
+    "vpn": {
+      "provider": "mullvad"
+    }
+  }
+}
+`},
+		{FormatJSONL, `{"hosting":{"confidence":"high","last_seen":"2026-09-11","provider":"m247"},` +
+			`"ip":"146.70.22.220","is_vpn":true,"vpn":{"provider":"mullvad"}}` + "\n"},
+		{FormatYAML, `146.70.22.220:
+  hosting:
+    confidence: high
+    last_seen: "2026-09-11"
+    provider: m247
+  ip: 146.70.22.220
+  is_vpn: true
+  vpn:
+    provider: mullvad
+`},
+		{FormatCSV, "ip,is_vpn,vpn.provider,hosting.provider,hosting.confidence,hosting.last_seen\n" +
+			"146.70.22.220,true,mullvad,m247,high,2026-09-11\n"},
+		{FormatPretty, `ip                  146.70.22.220
+is_vpn              true
+vpn.provider        mullvad
+hosting.provider    m247
+hosting.confidence  high
+hosting.last_seen   2026-09-11
+`},
+	}
+	for _, c := range cases {
+		if got := render(t, c.format, opts, maxAnswer); got != c.want {
+			t.Errorf("%s:\n%s\nwant\n%s", c.format, got, c.want)
+		}
+	}
+}
+
+// A selected field the answer does not carry stays out rather than printing as
+// null, and a detail object that arrived empty stays {} whichever of its fields
+// was named, so absent and false stay apart in a selection too.
+func TestFieldKeepsAbsentAndEmptyApart(t *testing.T) {
+	opts := Opts{Fields: []string{"is_hosting", "relay.provider", "tor"}}
+	if got := render(t, FormatJSONL, opts, freeAnswer); got != "{}\n" {
+		t.Errorf("free plan: got %q, want {} since it carries none of them", got)
+	}
+	want := `{"is_hosting":true,"relay":{},"tor":{}}` + "\n"
+	if got := render(t, FormatJSONL, opts, maxAnswer); got != want {
+		t.Errorf("max plan: got %q, want %q", got, want)
+	}
+}
+
+// An error is not an answer, so a selection leaves it whole: it still names its
+// address and says what went wrong.
+func TestFieldLeavesErrorsWhole(t *testing.T) {
+	cases := map[Format]string{
+		FormatJSON:  "{\n  \"9.9.9.9\": {\n    \"error\": \"rate limit exceeded\"\n  }\n}\n",
+		FormatJSONL: `{"error":"rate limit exceeded","ip":"9.9.9.9"}` + "\n",
+		FormatYAML:  "9.9.9.9:\n  error: rate limit exceeded\n",
+	}
+	for format, want := range cases {
+		var out strings.Builder
+		w := NewWriter(&out, format, Opts{Fields: []string{"is_vpn"}})
+		if err := w.WriteError("9.9.9.9", errors.New("rate limit exceeded")); err != nil {
+			t.Fatal(err)
+		}
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if out.String() != want {
+			t.Errorf("%s: got %q, want %q", format, out.String(), want)
+		}
+	}
 }
 
 // Pretty output prints ONLY what was served, and says nothing about the rest.

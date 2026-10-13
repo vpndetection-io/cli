@@ -189,6 +189,14 @@ vpn.provider  mullvad
 $ vpndetection 45.83.91.1 -f vpn          # the whole object
 ```
 
+It applies to every format. JSON, JSON Lines and YAML keep the answer's nesting, and leave out a field the answer does not carry:
+
+```console
+$ vpndetection bulk 45.83.91.1 1.1.1.1 --jsonl -f ip,is_vpn,vpn.provider
+{"ip":"45.83.91.1","is_vpn":true,"vpn":{"provider":"mullvad"}}
+{"ip":"1.1.1.1","is_vpn":false,"vpn":{}}
+```
+
 ### Bulk
 
 `bulk` always prints the machine format, whatever the count, which is what a script wants:

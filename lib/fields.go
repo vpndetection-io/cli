@@ -242,3 +242,38 @@ func ExpandFields(fields []string) []string {
 	}
 	return out
 }
+
+// selectFields keeps what a --field selection names, nested as in the full
+// answer: `is_vpn` keeps that flag, `vpn` the whole detail object as it was
+// served, and `vpn.provider` that object holding its provider alone.
+//
+// A field the answer does not carry stays out rather than appearing as null,
+// and a detail object that arrived empty stays `{}` whichever of its fields
+// was named, because that is the answer saying its flag is false.
+func selectFields(tree map[string]any, fields []string) map[string]any {
+	out := make(map[string]any, len(fields))
+	for _, f := range fields {
+		name, sub, nested := strings.Cut(f, ".")
+		v, ok := tree[name]
+		if !ok {
+			continue
+		}
+		if !nested {
+			out[name] = v
+			continue
+		}
+		obj, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		kept, ok := out[name].(map[string]any)
+		if !ok {
+			kept = map[string]any{}
+			out[name] = kept
+		}
+		if sv, ok := obj[sub]; ok {
+			kept[sub] = sv
+		}
+	}
+	return out
+}
