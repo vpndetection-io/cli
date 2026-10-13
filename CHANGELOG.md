@@ -2,6 +2,17 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.7.0 - 2026-10-13
+
+### Breaking changes
+
+- Apply --field to JSON, JSON Lines and YAML, as to CSV ([`847880e`](https://github.com/vpndetection-io/cli/commit/847880ef4eb9b06e70c003ac58f6970b2d8c3db1))
+- Print YAML with the API's field names and nesting, as JSON does ([`5d27b4e`](https://github.com/vpndetection-io/cli/commit/5d27b4efaa783b70bb2215056e01d248f5d3b6fc))
+
+### Fixes
+
+- Print an empty provider as "", not as the {} of a false flag ([`116b58e`](https://github.com/vpndetection-io/cli/commit/116b58ea1261b6283359dc036b7f4386ed54430b))
+
 ## 1.6.2 - 2026-10-12
 
 ### Fixes
