@@ -235,19 +235,24 @@ func (c *csvWriter) Close() error {
 type yamlWriter struct {
 	w       io.Writer
 	answers map[string]any
-	order   []string
 }
 
+// Write keeps the answer as its JSON decodes, never as the SDK's Go type,
+// whose encoding nests every field under `lookupresponse:`, names it in Go's
+// spelling (`iscdn`), prints null for what the plan leaves out and a map of
+// nulls for an empty detail object. YAML says what JSON says.
 func (y *yamlWriter) Write(ip string, v any) error {
-	if _, dup := y.answers[ip]; !dup {
-		y.order = append(y.order, ip)
+	tree, err := asTree(v)
+	if err != nil {
+		return err
 	}
-	y.answers[ip] = v
+	y.answers[ip] = tree
 	return nil
 }
 
 func (y *yamlWriter) WriteError(ip string, err error) error {
-	return y.Write(ip, map[string]string{"error": err.Error()})
+	y.answers[ip] = map[string]string{"error": err.Error()}
+	return nil
 }
 
 func (y *yamlWriter) Close() error {

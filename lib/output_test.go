@@ -5,6 +5,9 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
+	"gopkg.in/yaml.v3"
 )
 
 func render(t *testing.T, format Format, opts Opts, bodies ...string) string {
@@ -140,6 +143,45 @@ func TestJSONLIsOnePerLine(t *testing.T) {
 			t.Errorf("line is not valid JSON: %v", err)
 		}
 	}
+}
+
+// YAML says what JSON says: the API's keys, nothing nested under the SDK's type
+// name, a field the plan leaves out left out rather than null, and an empty
+// detail object as {}. The answer arrives as the SDK's Result here, as it does
+// from a lookup, because a body decoded into maps cannot show the difference.
+func TestYAMLSaysWhatJSONSays(t *testing.T) {
+	for _, body := range []string{freeAnswer, maxAnswer} {
+		var answer vpndetection.Result
+		if err := json.Unmarshal([]byte(body), &answer); err != nil {
+			t.Fatal(err)
+		}
+		var fromJSON, fromYAML map[string]any
+		if err := json.Unmarshal([]byte(renderAnswer(t, FormatJSON, &answer)), &fromJSON); err != nil {
+			t.Fatal(err)
+		}
+		asYAML := renderAnswer(t, FormatYAML, &answer)
+		if err := yaml.Unmarshal([]byte(asYAML), &fromYAML); err != nil {
+			t.Fatal(err)
+		}
+		wantJSON, _ := json.Marshal(fromJSON)
+		gotJSON, _ := json.Marshal(fromYAML)
+		if string(gotJSON) != string(wantJSON) {
+			t.Errorf("YAML differs from JSON:\n%s\nreads as %s\nwant %s", asYAML, gotJSON, wantJSON)
+		}
+	}
+}
+
+func renderAnswer(t *testing.T, format Format, answer *vpndetection.Result) string {
+	t.Helper()
+	var out strings.Builder
+	w := NewWriter(&out, format, Opts{})
+	if err := w.Write(answer.IP, answer); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return out.String()
 }
 
 // Pretty output prints ONLY what was served, and says nothing about the rest.

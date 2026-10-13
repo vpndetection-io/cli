@@ -67,6 +67,19 @@ type Record map[string]Cell
 // shape exactly as the API sent it: an optional field the plan excludes is a
 // missing key, not a zero value.
 func Flatten(v any) (Record, error) {
+	tree, err := asTree(v)
+	if err != nil {
+		return nil, err
+	}
+	rec := make(Record, len(Columns))
+	walk(rec, "", tree)
+	return rec, nil
+}
+
+// asTree is an answer as the API sent it: its JSON, decoded into maps. Every
+// format reads the answer through it, so each one carries the API's keys and
+// nesting whatever Go type the answer arrived in.
+func asTree(v any) (map[string]any, error) {
 	raw, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
@@ -75,9 +88,7 @@ func Flatten(v any) (Record, error) {
 	if err := json.Unmarshal(raw, &tree); err != nil {
 		return nil, err
 	}
-	rec := make(Record, len(Columns))
-	walk(rec, "", tree)
-	return rec, nil
+	return tree, nil
 }
 
 // walk flattens nested objects into dotted keys.
