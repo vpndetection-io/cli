@@ -2,6 +2,16 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.8.0 - 2026-10-14
+
+### Breaking changes
+
+- Append hits_days_pct and providers_num to CSV, and take them in --field ([`a5fe255`](https://github.com/vpndetection-io/cli/commit/a5fe255705bfa6be3111178b1ee58dde44fd9940))
+
+### Fixes
+
+- Print an empty detail object as {} under --show-absent and --field ([`def1010`](https://github.com/vpndetection-io/cli/commit/def1010bc83afacfcff35ca17ab9eb02dfbe1875))
+
 ## 1.7.0 - 2026-10-13
 
 ### Breaking changes
