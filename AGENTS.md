@@ -33,6 +33,13 @@ that survives a process anyway.
 prints JSON. The writer is opened only once the first chunk is in hand, which is
 what makes that decidable without buffering the whole input.
 
+**A field joins `lib.Columns` at its END, never beside its object's other
+fields**, because that order is the CSV header and a caller's column indexes
+must not move; the readable block lists it with its object all the same.
+`TestColumnsAreTheSDKsFields` fails on the sdk-go bump that brings a field the
+list does not name. Before it existed, `hits_days_pct` and `providers_num` went
+unnamed from the first release to 1.8.0, refused by `-f` and missing from CSV.
+
 **The subcommand is found by scanning, not by `os.Args[1]`.** `vpndetection
 --session work db list` is natural to type, and reading the second argument
 literally makes it a lookup of the address `--session`. `commandArg` skips the
