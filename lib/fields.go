@@ -9,13 +9,14 @@ import (
 	"strings"
 )
 
-// Columns is every field an answer can carry, in the order output presents
-// them: the address, then the flags, then each flag's detail object.
+// Columns is every field an answer can carry, in CSV's order: the address, then
+// the flags, then each flag's detail object, then the fields added since.
 //
 // Fixed and explicit rather than derived by reflection, because this order IS
 // the CSV contract. A caller's column indexes must not move because the API
 // grew a field, and a new field appearing silently at the end is far easier to
-// absorb than one appearing in the middle.
+// absorb than one appearing in the middle. The readable block lists each one
+// with its object's other fields all the same.
 var Columns = []string{
 	"ip",
 	"is_bogon",
@@ -37,6 +38,10 @@ var Columns = []string{
 	"resproxy.provider", "resproxy.first_seen", "resproxy.last_seen", "resproxy.hits",
 	"dcproxy.provider", "dcproxy.first_seen", "dcproxy.last_seen", "dcproxy.hits",
 	"mobproxy.provider", "mobproxy.first_seen", "mobproxy.last_seen", "mobproxy.hits",
+
+	"resproxy.hits_days_pct", "resproxy.providers_num",
+	"dcproxy.hits_days_pct", "dcproxy.providers_num",
+	"mobproxy.hits_days_pct", "mobproxy.providers_num",
 }
 
 // Flags are the top-level booleans, which is what a summary line shows.

@@ -1,8 +1,11 @@
 package lib
 
 import (
+	"reflect"
 	"strings"
 	"testing"
+
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
 // freeAnswer is what the free plan serves: two fields, and every other one
@@ -18,6 +21,18 @@ const maxAnswer = `{
   "vpn":{"provider":"mullvad","last_seen":"2026-09-12","confidence":"high","method":"scan"},
   "hosting":{"provider":"m247","confidence":"high","last_seen":"2026-09-11"},
   "relay":{},"tor":{},"cdn":{},"resproxy":{},"dcproxy":{},"mobproxy":{},
+  "is_bogon":false
+}`
+
+// proxyAnswer carries two proxy families' detail objects populated, as the API
+// serves a populated one: with every key, the two Columns gained last included.
+const proxyAnswer = `{
+  "ip":"217.80.249.248","is_resproxy":true,"is_dcproxy":false,"is_mobproxy":true,
+  "resproxy":{"provider":"","first_seen":"2026-07-16","last_seen":"2026-10-12","hits":120,
+    "hits_days_pct":19,"providers_num":18},
+  "dcproxy":{},
+  "mobproxy":{"provider":"p","first_seen":"2026-09-30","last_seen":"2026-10-11","hits":3,
+    "hits_days_pct":2,"providers_num":1},
   "is_bogon":false
 }`
 
@@ -130,5 +145,45 @@ func TestValidateAndExpandFields(t *testing.T) {
 	want := []string{"is_vpn", "vpn.provider", "vpn.last_seen", "vpn.confidence", "vpn.method"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+// Columns names every field the SDK's answer can carry, and nothing else, so
+// neither CSV nor --field leaves one out. A field a new sdk-go brings fails
+// here, on the bump that brings it.
+func TestColumnsAreTheSDKsFields(t *testing.T) {
+	var answer vpndetection.Result
+	fill(reflect.ValueOf(&answer).Elem())
+	rec, err := Flatten(&answer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	named := make(map[string]bool, len(Columns))
+	for _, col := range Columns {
+		named[col] = true
+		if !rec[col].Present {
+			t.Errorf("Columns names %s, which the SDK's answer does not carry", col)
+		}
+	}
+	for k := range rec {
+		if !named[k] {
+			t.Errorf("the SDK's answer carries %s, which Columns does not name: "+
+				"append it, so no CSV column moves", k)
+		}
+	}
+}
+
+// fill gives every member of v a value, so that its JSON carries every key.
+func fill(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Pointer:
+		v.Set(reflect.New(v.Type().Elem()))
+		fill(v.Elem())
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			if v.Field(i).CanSet() {
+				fill(v.Field(i))
+			}
+		}
 	}
 }

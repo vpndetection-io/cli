@@ -361,6 +361,55 @@ func TestFieldPrintsAnEmptyObjectAsItself(t *testing.T) {
 	}
 }
 
+// The readable block lists each detail object's fields together, the ones
+// appended to Columns after the rest included, by default and with
+// --show-absent alike.
+func TestPrettyKeepsEachObjectTogether(t *testing.T) {
+	for name, got := range map[string]string{
+		"default":       render(t, FormatPretty, Opts{}, proxyAnswer),
+		"--show-absent": render(t, FormatPretty, Opts{ShowAbsent: true}, freeAnswer),
+	} {
+		done := map[string]bool{}
+		last := ""
+		for _, line := range strings.Split(strings.TrimSpace(got), "\n") {
+			field, _, _ := strings.Cut(line, " ")
+			obj, _, _ := strings.Cut(field, ".")
+			if obj == last {
+				continue
+			}
+			if done[obj] {
+				t.Errorf("%s splits %s's fields:\n%s", name, obj, got)
+				break
+			}
+			done[last] = true
+			last = obj
+		}
+	}
+}
+
+// --field takes the proxy fields Columns gained last, alone or with the rest of
+// their object, and CSV prints them.
+func TestFieldTakesEveryProxyField(t *testing.T) {
+	cases := []struct {
+		fields []string
+		want   string
+	}{
+		{[]string{"ip", "resproxy.hits_days_pct", "resproxy.providers_num"},
+			"ip,resproxy.hits_days_pct,resproxy.providers_num\n217.80.249.248,19,18\n"},
+		{[]string{"mobproxy"}, "mobproxy.provider,mobproxy.first_seen,mobproxy.last_seen,mobproxy.hits," +
+			"mobproxy.hits_days_pct,mobproxy.providers_num\np,2026-09-30,2026-10-11,3,2,1\n"},
+	}
+	for _, c := range cases {
+		if err := ValidateFields(c.fields); err != nil {
+			t.Errorf("-f %v: %v", c.fields, err)
+			continue
+		}
+		if got := render(t, FormatCSV, Opts{Fields: c.fields}, proxyAnswer); got != c.want {
+			t.Errorf("-f %v:\n%s\nwant\n%s", c.fields, got, c.want)
+		}
+	}
+}
+
 func TestParseFormat(t *testing.T) {
 	for in, want := range map[string]Format{
 		"": FormatPretty, "pretty": FormatPretty, "JSON": FormatJSON,
