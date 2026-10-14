@@ -160,10 +160,40 @@ var Objects = []string{
 // its fields, because that is what it is - `"vpn": {}` says the flag above it is
 // false, and expanding it into four blank rows would say something else.
 func (r Record) Present() []string {
-	out := make([]string, 0, len(r))
-	seen := make(map[string]bool, len(r))
+	return r.listed(false)
+}
+
+// All lists what Present does and, each in its place among them, the fields
+// this answer does not carry, which is what --show-absent prints.
+func (r Record) All() []string {
+	return r.listed(true)
+}
+
+// Selected lists what a --field selection names, an object as its fields,
+// except that a detail object which arrived empty is listed once by its own
+// name, as Present lists it.
+func (r Record) Selected(fields []string) []string {
+	out := make([]string, 0, len(fields))
+	seen := make(map[string]bool)
+	for _, f := range ExpandFields(fields) {
+		obj, _, nested := strings.Cut(f, ".")
+		if !nested || !r[obj].EmptyObject {
+			out = append(out, f)
+			continue
+		}
+		if !seen[obj] {
+			out = append(out, obj)
+			seen[obj] = true
+		}
+	}
+	return out
+}
+
+func (r Record) listed(absent bool) []string {
+	out := make([]string, 0, len(Columns))
+	seen := make(map[string]bool, len(Columns))
 	emit := func(k string) {
-		if c, ok := r[k]; ok && c.Present && !seen[k] {
+		if (absent || r[k].Present) && !seen[k] {
 			out = append(out, k)
 			seen[k] = true
 		}
@@ -175,7 +205,7 @@ func (r Record) Present() []string {
 		emit(f)
 	}
 	for _, obj := range Objects {
-		if c, ok := r[obj]; ok && c.Present {
+		if r[obj].Present {
 			emit(obj)
 			continue
 		}

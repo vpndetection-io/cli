@@ -319,6 +319,48 @@ func TestPrettyShowAbsent(t *testing.T) {
 	}
 }
 
+// --show-absent prints a detail object that arrived empty as {}, as the block
+// does by default, never as a '-' for each of its fields, which says the plan
+// leaves them out. An object the plan does leave out still prints that way.
+func TestPrettyShowAbsentPrintsAnEmptyObjectAsItself(t *testing.T) {
+	rows := func(body string) map[string]string {
+		out := map[string]string{}
+		got := render(t, FormatPretty, Opts{ShowAbsent: true}, body)
+		for _, line := range strings.Split(strings.TrimSpace(got), "\n") {
+			name, value, _ := strings.Cut(line, " ")
+			out[name] = strings.TrimSpace(value)
+		}
+		return out
+	}
+	max := rows(maxAnswer)
+	if _, split := max["relay.provider"]; max["relay"] != "{}" || split {
+		t.Errorf("max: relay = %q, want {} and no relay.provider row: %v", max["relay"], max)
+	}
+	free := rows(freeAnswer)
+	if _, whole := free["relay"]; free["relay.provider"] != "-" || whole {
+		t.Errorf("free: relay.provider = %q, want - and no relay row: %v", free["relay.provider"], free)
+	}
+}
+
+// So does a selection naming the object or any of its fields. Its fields stay
+// '-' where the plan leaves the object out.
+func TestFieldPrintsAnEmptyObjectAsItself(t *testing.T) {
+	cases := []struct {
+		body   string
+		fields []string
+		want   string
+	}{
+		{maxAnswer, []string{"relay"}, "relay  {}\n"},
+		{maxAnswer, []string{"is_relay", "relay.provider", "relay.last_seen"}, "is_relay  false\nrelay     {}\n"},
+		{freeAnswer, []string{"relay"}, "relay.provider    -\nrelay.confidence  -\nrelay.last_seen   -\n"},
+	}
+	for _, c := range cases {
+		if got := render(t, FormatPretty, Opts{Fields: c.fields}, c.body); got != c.want {
+			t.Errorf("-f %v:\n%s\nwant\n%s", c.fields, got, c.want)
+		}
+	}
+}
+
 func TestParseFormat(t *testing.T) {
 	for in, want := range map[string]Format{
 		"": FormatPretty, "pretty": FormatPretty, "JSON": FormatJSON,

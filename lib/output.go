@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -335,32 +334,13 @@ func (p *prettyWriter) WriteError(ip string, err error) error {
 
 func (p *prettyWriter) Close() error { return nil }
 
-// extraOf is the fields an answer carried that Columns does not name, which is
-// what the API growing a field looks like from here.
-func extraOf(rec Record) []string {
-	known := make(map[string]bool, len(Columns)+len(Objects))
-	for _, c := range Columns {
-		known[c] = true
-	}
-	for _, o := range Objects {
-		known[o] = true
-	}
-	out := make([]string, 0)
-	for k, c := range rec {
-		if c.Present && !known[k] {
-			out = append(out, k)
-		}
-	}
-	sort.Strings(out)
-	return out
-}
-
-// WritePretty renders one answer as a readable block.
+// WritePretty renders one answer as a readable block: the fields this plan
+// carries, or what a selection or --show-absent names, with '-' for each field
+// the answer does not carry.
 //
-// Only the fields this plan actually carries are printed. What it does NOT
-// carry is named once at the end rather than shown as a wall of blanks - a
-// reader who sees no `is_tor` line needs to know that means "not included"
-// rather than "not a Tor node", and that is one sentence, not thirty rows.
+// A detail object that arrived empty prints as {} in all three, never as a '-'
+// for each of its fields, which would say the plan leaves them out rather than
+// that the flag above it is false.
 func WritePretty(w io.Writer, rec Record, opts Opts) error {
 	name := color.New(color.FgCyan)
 	value := color.New(color.FgGreen)
@@ -375,10 +355,9 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 	fields := rec.Present()
 	switch {
 	case len(opts.Fields) > 0:
-		fields = ExpandFields(opts.Fields)
+		fields = rec.Selected(opts.Fields)
 	case opts.ShowAbsent:
-		// Every column, so the ones this plan does not include are rendered as "-".
-		fields = append(append([]string{}, Columns...), extraOf(rec)...)
+		fields = rec.All()
 	}
 
 	width := 0
@@ -417,8 +396,8 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 	}
 
 	// Nothing is printed about the fields this plan does not include. It was a
-	// summary line here, and on the free tier - where 35 of the 37 fields are
-	// absent - it was longer than the answer and appeared under every single
+	// summary line here, and on the free tier, where all but a few fields are
+	// absent, it was longer than the answer and appeared under every single
 	// lookup. --show-absent renders them as rows for anyone who wants them, and
 	// the absent-versus-false rule is stated once in the README rather than on
 	// every line of output.
