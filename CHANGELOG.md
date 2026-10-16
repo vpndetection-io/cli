@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.9.0 - 2026-10-16
+
+### Breaking changes
+
+- Refuse an argument that is no address and names no file ([`ac99e37`](https://github.com/vpndetection-io/cli/commit/ac99e379a739a080734e5c2f7960b7d67cd854f3))
+
 ## 1.8.1 - 2026-10-16
 
 ### Fixes
