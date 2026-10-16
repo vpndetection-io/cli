@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.8.1 - 2026-10-16
+
+### Fixes
+
+- Take sdk-go v5.5.3: retry an unreadable 2xx, refuse control chars in a key ([`508f7c0`](https://github.com/vpndetection-io/cli/commit/508f7c09c7775f63bc24e5ef819a201b45a14a71))
+
 ## 1.8.0 - 2026-10-14
 
 ### Breaking changes
