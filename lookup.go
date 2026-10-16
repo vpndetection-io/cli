@@ -45,6 +45,9 @@ type lookupOpts struct {
 // arguments there were: a single `10.0.0.0/30` is four addresses and a single
 // `10.0.0.1/32` is one.
 func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
+	if err := checkArgs(args); err != nil {
+		return err
+	}
 	client, err := NewClient()
 	if err != nil {
 		return err
@@ -133,6 +136,22 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 	}
 	if unanswered {
 		return errUnanswered
+	}
+	return nil
+}
+
+// checkArgs refuses an argument that is no address, range or CIDR and names no readable file.
+// iputil skips such a token, which is right for a list file's header line but not for something
+// typed: `vpnd 1.1.1.1 adresses.txt` would answer for one address and exit 0 over the misspelled file.
+func checkArgs(args []string) error {
+	for _, arg := range args {
+		in := iputil.Classify(arg)
+		if in.Kind == iputil.KindASN {
+			return fmt.Errorf("%q is an AS number; look up an IP, CIDR or range", arg)
+		}
+		if in.Kind == iputil.KindUnknown && !iputil.FileExists(arg) {
+			return fmt.Errorf("%q is not an IP, CIDR, range or readable file", arg)
+		}
 	}
 	return nil
 }

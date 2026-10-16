@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -144,4 +146,35 @@ func captureStdout(t *testing.T, fn func() error) (*os.File, error) {
 		t.Fatal(err)
 	}
 	return file, fnErr
+}
+
+// A typed argument is an address, a range, a CIDR or a file that exists: anything else is named
+// back rather than skipped, as a list file's unparseable lines are.
+func TestCheckArgs(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "addresses.txt")
+	if err := os.WriteFile(file, []byte("ip\n8.8.8.8\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		arg  string
+		want string
+	}{
+		{"8.8.8.8", ""},
+		{"2001:db8::1", ""},
+		{"10.0.0.0/30", ""},
+		{"1.1.1.1-1.1.1.3", ""},
+		{file, ""},
+		{"adresses.txt", "not an IP, CIDR, range or readable file"},
+		{"not-an-ip", "not an IP, CIDR, range or readable file"},
+		{"AS15169", "is an AS number"},
+	}
+	for _, c := range cases {
+		err := checkArgs([]string{"8.8.8.8", c.arg})
+		if c.want == "" && err != nil {
+			t.Errorf("%q: %v, want no error", c.arg, err)
+		}
+		if c.want != "" && (err == nil || !strings.Contains(err.Error(), c.want)) {
+			t.Errorf("%q: %v, want an error containing %q", c.arg, err, c.want)
+		}
+	}
 }
