@@ -28,6 +28,10 @@ single `8.0.0.0/8` argument is 16.7 million addresses. The SDK's own
 in-memory cache is switched OFF for the same reason; the disk cache is the one
 that survives a process anyway.
 
+**A typed argument that parses as nothing is an error; a list's line that does is skipped.**
+`checkArgs` names it, exit 1, before any lookup (1.9.0): `iputil` skips such a token, right for a
+file's header line, but a misspelled file argument then looked up the rest and exited 0.
+
 **One address or many is decided by the resolved COUNT**, not by argument shape.
 `10.0.0.1/32` is one and prints the readable block; `10.0.0.0/30` is four and
 prints JSON. The writer is opened only once the first chunk is in hand, which is
