@@ -149,10 +149,11 @@ func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) erro
 	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "ID\tNAME\tLICENSE\tSTANDING\tTERM")
+	now := time.Now()
 	for _, d := range items {
 		for _, v := range d.Versions {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-				v.ID, d.Name, licenseType(d), d.Standing, licenseTerm(d))
+				v.ID, d.Name, licenseType(d), d.Standing, licenseTerm(d, now))
 		}
 	}
 	return w.Flush()
@@ -171,15 +172,20 @@ func licenseType(d vpndetection.Database) string {
 	return string(*d.LicenseType)
 }
 
-// licenseTerm renders when a license ends, which is the one thing a holder has to act
-// on. An empty string means there is nothing to act on.
-func licenseTerm(d vpndetection.Database) string {
+// licenseTerm renders when a license ends, or when it starts if it has not yet,
+// which is what a holder has to act on. An empty string means there is nothing
+// to act on.
+func licenseTerm(d vpndetection.Database, now time.Time) string {
 	switch {
 	// Never bought is not the same as lapsed, and since v4 the catalog lists
 	// both. `standing` already carries the distinction; saying "lapsed" against
 	// a database nobody ever held would invent a history.
 	case d.Standing == vpndetection.StandingUnlicensed:
 		return ""
+	// The API reads a license whose term has not begun as `expired` until it
+	// starts, so without this a contract just signed would read "lapsed".
+	case d.Starts != nil && now.Before(*d.Starts):
+		return "starts " + d.Starts.Format("2006-01-02")
 	case !d.InTerm:
 		return "lapsed"
 	case d.Expires != nil:
