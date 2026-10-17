@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.9.1 - 2026-10-17
+
+### Fixes
+
+- Show a license that has not started yet by its start date, not as lapsed ([`b5d53e7`](https://github.com/vpndetection-io/cli/commit/b5d53e72aa2439d7c6386536d11eb07258616de1))
+
 ## 1.9.0 - 2026-10-16
 
 ### Breaking changes

@@ -70,8 +70,8 @@ Binaries are published for 23 platform and architecture pairs on the [releases p
 
 ```bash
 # Linux amd64; for Windows use ".zip" instead of ".tar.gz"
-curl -LO https://github.com/vpndetection-io/cli/releases/download/v1.9.0/vpndetection_1.9.0_linux_amd64.tar.gz
-tar -xzf vpndetection_1.9.0_linux_amd64.tar.gz
+curl -LO https://github.com/vpndetection-io/cli/releases/download/v1.9.1/vpndetection_1.9.1_linux_amd64.tar.gz
+tar -xzf vpndetection_1.9.1_linux_amd64.tar.gz
 sudo mv vpndetection /usr/local/bin/
 ```
 
