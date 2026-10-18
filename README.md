@@ -53,7 +53,7 @@ iwr -useb https://github.com/vpndetection-io/cli/releases/latest/download/window
 ### Docker
 
 ```bash
-docker run --rm ghcr.io/vpndetection-io/cli 45.83.91.1
+docker run --rm ghcr.io/vpndetection-io/cli 146.70.116.130
 ```
 
 ### Using `go install`
@@ -130,7 +130,7 @@ For a CI job, set `VPNDETECTION_API_KEY` in the job's environment from your CI's
 
 ```console
 $ export VPNDETECTION_API_KEY=...
-$ vpndetection 45.83.91.1
+$ vpndetection 146.70.116.130
 ```
 
 `vpndetection login --paste` prompts for one without opening a browser, and `vpndetection logout` signs this machine out, which ends the authorization rather than only deleting the local file.
@@ -139,7 +139,7 @@ $ vpndetection 45.83.91.1
 
 ```console
 $ vpndetection myip
-ip        45.83.91.1
+ip        146.70.116.130
 is_bogon  false
 is_vpn    true
 ```
@@ -149,8 +149,8 @@ This is the address our edge observed, so behind a proxy or a VPN it reports the
 ### Any IP
 
 ```console
-$ vpndetection 45.83.91.1
-ip                  45.83.91.1
+$ vpndetection 146.70.116.130
+ip                  146.70.116.130
 is_bogon            false
 is_vpn              true
 is_hosting          true
@@ -179,21 +179,21 @@ Anything resolving to more than one address prints JSON keyed by address; a sing
 ### Field filter
 
 ```console
-$ vpndetection 45.83.91.1 -f is_vpn
+$ vpndetection 146.70.116.130 -f is_vpn
 is_vpn  true
 
-$ vpndetection 45.83.91.1 -f is_vpn,vpn.provider
+$ vpndetection 146.70.116.130 -f is_vpn,vpn.provider
 is_vpn        true
 vpn.provider  mullvad
 
-$ vpndetection 45.83.91.1 -f vpn          # the whole object
+$ vpndetection 146.70.116.130 -f vpn          # the whole object
 ```
 
 It applies to every format. JSON, JSON Lines and YAML keep the answer's nesting, and leave out a field the answer does not carry:
 
 ```console
-$ vpndetection bulk 45.83.91.1 1.1.1.1 --jsonl -f ip,is_vpn,vpn.provider
-{"ip":"45.83.91.1","is_vpn":true,"vpn":{"provider":"mullvad"}}
+$ vpndetection bulk 146.70.116.130 1.1.1.1 --jsonl -f ip,is_vpn,vpn.provider
+{"ip":"146.70.116.130","is_vpn":true,"vpn":{"provider":"mullvad"}}
 {"ip":"1.1.1.1","is_vpn":false,"vpn":{}}
 ```
 
@@ -233,7 +233,7 @@ $ vpndetection session list
    work     mk_9***************wxyz  default                  never
 
 $ vpndetection session use work
-$ vpndetection --session work 45.83.91.1    # one command, without switching
+$ vpndetection --session work 146.70.116.130    # one command, without switching
 ```
 
 `--base-url` points a session at another deployment of the API; a session without one talks to `https://api.vpndetection.io`.
@@ -335,7 +335,7 @@ Answers are cached on disk, so looking the same address up twice costs one reque
 ```bash
 vpndetection cache info
 vpndetection cache clear
-vpndetection --nocache 45.83.91.1
+vpndetection --nocache 146.70.116.130
 vpndetection config list
 vpndetection config cache=disable cache_ttl=24h
 ```
