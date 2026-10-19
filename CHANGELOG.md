@@ -2,6 +2,16 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.10.0 - 2026-10-19
+
+### Breaking changes
+
+- Take sdk-go v5.8.0, and print is_pubproxy and the pubproxy object ([`f949a13`](https://github.com/vpndetection-io/cli/commit/f949a1352ab371ee038839ad709c604e5712749b))
+
+### Fixes
+
+- Take libgo-iputil v1.1.3: keep a list's first address after a byte order mark ([`a1ba0dc`](https://github.com/vpndetection-io/cli/commit/a1ba0dc43c6b055c444d910ce2dd0efaa0407a3d))
+
 ## 1.9.1 - 2026-10-17
 
 ### Fixes
