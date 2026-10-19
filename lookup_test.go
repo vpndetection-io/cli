@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	iputil "github.com/mslmio/libgo-iputil"
 	"github.com/vpndetection-io/cli/lib"
 )
 
@@ -124,6 +125,53 @@ func TestLookupReportsAnUnansweredAddress(t *testing.T) {
 	want := `{"ip":"1.1.1.1","is_vpn":false,"is_bogon":false}` + "\n" +
 		`{"error":"vpndetection: quota_exceeded (HTTP 429): quota exceeded","ip":"2.2.2.2"}` + "\n"
 	if string(written) != want {
+		t.Errorf("wrote\n%s\nwant\n%s", written, want)
+	}
+}
+
+// A list file that starts with a byte order mark, as Excel's "CSV UTF-8" export
+// writes one, loses none of its addresses: the first is not the mark glued to it.
+func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			IPs []string `json:"ips"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			http.Error(w, `{"error":"unreadable body"}`, http.StatusBadRequest)
+			return
+		}
+		results := make(map[string]any, len(in.IPs))
+		for _, ip := range in.IPs {
+			results[ip] = map[string]any{"ip": ip, "is_vpn": false}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"results": results, "errors": map[string]any{}})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	file := filepath.Join(t.TempDir(), "ips.csv")
+	if err := os.WriteFile(file, []byte("\xef\xbb\xbf1.1.1.1\r\n8.8.8.8\r\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), []string{file},
+			lookupOpts{format: lib.FormatCSV, fields: []string{"ip"}, input: iputil.Opts{Files: true}})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	written, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "ip\n1.1.1.1\n8.8.8.8\n"; string(written) != want {
 		t.Errorf("wrote\n%s\nwant\n%s", written, want)
 	}
 }
