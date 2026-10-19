@@ -16,7 +16,8 @@ import (
 // the CSV contract. A caller's column indexes must not move because the API
 // grew a field, and a new field appearing silently at the end is far easier to
 // absorb than one appearing in the middle. The readable block lists each one
-// with its object's other fields all the same.
+// with its object's other fields all the same. is_pubproxy is the exception:
+// 1.10.0 put it with the other flags, which moved every column after it.
 var Columns = []string{
 	"ip",
 	"is_bogon",
@@ -29,6 +30,7 @@ var Columns = []string{
 	"is_resproxy",
 	"is_dcproxy",
 	"is_mobproxy",
+	"is_pubproxy",
 
 	"vpn.provider", "vpn.last_seen", "vpn.confidence", "vpn.method",
 	"hosting.provider", "hosting.confidence", "hosting.last_seen",
@@ -42,12 +44,16 @@ var Columns = []string{
 	"resproxy.hits_days_pct", "resproxy.providers_num",
 	"dcproxy.hits_days_pct", "dcproxy.providers_num",
 	"mobproxy.hits_days_pct", "mobproxy.providers_num",
+
+	"pubproxy.entry", "pubproxy.exit", "pubproxy.protocols",
+	"pubproxy.num_ports", "pubproxy.num_proxies",
+	"pubproxy.last_seen", "pubproxy.last_usable",
 }
 
 // Flags are the top-level booleans, which is what a summary line shows.
 var Flags = []string{
 	"is_vpn", "is_hosting", "is_relay", "is_tor",
-	"is_cdn", "is_resproxy", "is_dcproxy", "is_mobproxy",
+	"is_cdn", "is_resproxy", "is_dcproxy", "is_mobproxy", "is_pubproxy",
 }
 
 // Cell is one field of one answer.
@@ -156,6 +162,7 @@ func (r Record) Get(field string) Cell { return r[field] }
 // belongs to the flag of the same name.
 var Objects = []string{
 	"vpn", "hosting", "relay", "tor", "cdn", "resproxy", "dcproxy", "mobproxy",
+	"pubproxy",
 }
 
 // Present lists the fields this answer actually carries, in display order:

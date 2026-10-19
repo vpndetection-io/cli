@@ -388,7 +388,7 @@ func TestPrettyKeepsEachObjectTogether(t *testing.T) {
 }
 
 // --field takes the proxy fields Columns gained last, alone or with the rest of
-// their object, and CSV prints them.
+// their object, and CSV prints them, a list as its JSON.
 func TestFieldTakesEveryProxyField(t *testing.T) {
 	cases := []struct {
 		fields []string
@@ -398,6 +398,9 @@ func TestFieldTakesEveryProxyField(t *testing.T) {
 			"ip,resproxy.hits_days_pct,resproxy.providers_num\n217.80.249.248,19,18\n"},
 		{[]string{"mobproxy"}, "mobproxy.provider,mobproxy.first_seen,mobproxy.last_seen,mobproxy.hits," +
 			"mobproxy.hits_days_pct,mobproxy.providers_num\np,2026-09-30,2026-10-11,3,2,1\n"},
+		{[]string{"is_pubproxy", "pubproxy"}, "is_pubproxy,pubproxy.entry,pubproxy.exit," +
+			"pubproxy.protocols,pubproxy.num_ports,pubproxy.num_proxies,pubproxy.last_seen," +
+			"pubproxy.last_usable\ntrue,false,true,\"[\"\"socks5\"\"]\",0,1,2026-10-17,2026-10-17\n"},
 	}
 	for _, c := range cases {
 		if err := ValidateFields(c.fields); err != nil {

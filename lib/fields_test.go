@@ -24,15 +24,18 @@ const maxAnswer = `{
   "is_bogon":false
 }`
 
-// proxyAnswer carries two proxy families' detail objects populated, as the API
-// serves a populated one: with every key, the two Columns gained last included.
+// proxyAnswer carries three proxy families' detail objects populated, as the API
+// serves a populated one: with every key, the ones Columns gained last included.
 const proxyAnswer = `{
   "ip":"217.80.249.248","is_resproxy":true,"is_dcproxy":false,"is_mobproxy":true,
+  "is_pubproxy":true,
   "resproxy":{"provider":"","first_seen":"2026-07-16","last_seen":"2026-10-12","hits":120,
     "hits_days_pct":19,"providers_num":18},
   "dcproxy":{},
   "mobproxy":{"provider":"p","first_seen":"2026-09-30","last_seen":"2026-10-11","hits":3,
     "hits_days_pct":2,"providers_num":1},
+  "pubproxy":{"entry":false,"exit":true,"protocols":["socks5"],"num_ports":0,"num_proxies":1,
+    "last_seen":"2026-10-17","last_usable":"2026-10-17"},
   "is_bogon":false
 }`
 
@@ -129,6 +132,15 @@ func TestScalarRendering(t *testing.T) {
 	if c := rec.Get("resproxy.hits"); c.Text != "42" {
 		t.Errorf("number: %q", c.Text)
 	}
+	// A list prints as its JSON, so an empty one is not an absent field's blank.
+	rec = flattenJSON(t, `{"pubproxy":{"protocols":["socks5","http"]}}`)
+	if c := rec.Get("pubproxy.protocols"); c.Text != `["socks5","http"]` {
+		t.Errorf("list: %q", c.Text)
+	}
+	rec = flattenJSON(t, `{"pubproxy":{"protocols":[]}}`)
+	if c := rec.Get("pubproxy.protocols"); !c.Present || c.Text != "[]" {
+		t.Errorf("empty list: %+v", c)
+	}
 }
 
 func TestValidateAndExpandFields(t *testing.T) {
@@ -169,6 +181,33 @@ func TestColumnsAreTheSDKsFields(t *testing.T) {
 		if !named[k] {
 			t.Errorf("the SDK's answer carries %s, which Columns does not name: "+
 				"append it, so no CSV column moves", k)
+		}
+	}
+}
+
+// Flags and Objects are what the readable block lists Columns by, so a flag or
+// an object Columns gains and they do not name prints apart from its family.
+func TestFlagsAndObjectsFollowColumns(t *testing.T) {
+	var flags, objects []string
+	seen := map[string]bool{}
+	for _, col := range Columns {
+		if strings.HasPrefix(col, "is_") && col != "is_bogon" {
+			flags = append(flags, col)
+		}
+		if obj, _, nested := strings.Cut(col, "."); nested && !seen[obj] {
+			objects = append(objects, obj)
+			seen[obj] = true
+		}
+	}
+	if !reflect.DeepEqual(Flags, flags) {
+		t.Errorf("Flags = %v, want the flags Columns names, in its order: %v", Flags, flags)
+	}
+	if !reflect.DeepEqual(Objects, objects) {
+		t.Errorf("Objects = %v, want the objects Columns names, in its order: %v", Objects, objects)
+	}
+	for _, f := range Flags {
+		if !seen[strings.TrimPrefix(f, "is_")] {
+			t.Errorf("%s has no detail object in Columns", f)
 		}
 	}
 }
