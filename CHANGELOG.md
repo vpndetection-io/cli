@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.0 - 2026-10-20
+
+### Features
+
+- Add the location and asn columns, and leave vpn.method out of the block ([`a0cf158`](https://github.com/vpndetection-io/cli/commit/a0cf158427ac5dcebcdf75847d966d2e3f7b1a53))
+
 ## 1.10.1 - 2026-10-20
 
 ### Fixes
