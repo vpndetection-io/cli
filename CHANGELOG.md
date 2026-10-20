@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.10.1 - 2026-10-20
+
+### Fixes
+
+- Build on Go 1.27.3, which distrusts a handful of intermediates ([`0755697`](https://github.com/vpndetection-io/cli/commit/07556979a7b857e275ee0872be0abef449b75035))
+
 ## 1.10.0 - 2026-10-19
 
 ### Breaking changes
