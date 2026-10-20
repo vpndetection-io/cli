@@ -18,6 +18,9 @@ import (
 // absorb than one appearing in the middle. The readable block lists each one
 // with its object's other fields all the same. is_pubproxy is the exception:
 // 1.10.0 put it with the other flags, which moved every column after it.
+//
+// vpn.method keeps its column, always empty: no plan is answered with it since
+// 2026-10-20, and dropping it would move every column after it.
 var Columns = []string{
 	"ip",
 	"is_bogon",
@@ -48,7 +51,17 @@ var Columns = []string{
 	"pubproxy.entry", "pubproxy.exit", "pubproxy.protocols",
 	"pubproxy.num_ports", "pubproxy.num_proxies",
 	"pubproxy.last_seen", "pubproxy.last_usable",
+
+	"location.continent", "location.continent_name", "location.country", "location.country_name",
+	"location.timezone", "location.currency_code", "location.currency_name", "location.currency_symbol",
+	"location.flag_emoji", "location.flag_unicode",
+	"asn.asn", "asn.name", "asn.domain", "asn.type", "asn.prefix",
 }
+
+// retired are columns no answer carries any more, kept so no CSV column moves.
+// The readable block leaves them out even under --show-absent, since absent is
+// all they can be.
+var retired = map[string]bool{"vpn.method": true}
 
 // Flags are the top-level booleans, which is what a summary line shows.
 var Flags = []string{
@@ -159,10 +172,11 @@ func scalar(v any) string {
 func (r Record) Get(field string) Cell { return r[field] }
 
 // Objects are the detail objects, in the order output presents them. Each one
-// belongs to the flag of the same name.
+// belongs to the flag of the same name, but for location and asn, which every
+// keyed answer carries whole.
 var Objects = []string{
 	"vpn", "hosting", "relay", "tor", "cdn", "resproxy", "dcproxy", "mobproxy",
-	"pubproxy",
+	"pubproxy", "location", "asn",
 }
 
 // Present lists the fields this answer actually carries, in display order:
@@ -205,7 +219,7 @@ func (r Record) listed(absent bool) []string {
 	out := make([]string, 0, len(Columns))
 	seen := make(map[string]bool, len(Columns))
 	emit := func(k string) {
-		if (absent || r[k].Present) && !seen[k] {
+		if (absent && !retired[k] || r[k].Present) && !seen[k] {
 			out = append(out, k)
 			seen[k] = true
 		}

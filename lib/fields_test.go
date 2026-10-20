@@ -8,12 +8,13 @@ import (
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
 
-// freeAnswer is what the free plan serves: two fields, and every other one
-// ABSENT rather than false.
+// freeAnswer is what a lookup without a key serves: two fields, and every other
+// one ABSENT rather than false.
 const freeAnswer = `{"ip":"1.1.1.1","is_vpn":true,"is_bogon":false}`
 
-// maxAnswer is the full shape, including a detail object that is present but
-// EMPTY - which means the flag above it is false, not that it is missing.
+// maxAnswer is the full shape Max served before 2026-10-20, method included,
+// with a detail object that is present but EMPTY - which means the flag above it
+// is false, not that it is missing.
 const maxAnswer = `{
   "ip":"146.70.22.220","is_vpn":true,"is_hosting":true,"is_relay":false,
   "is_tor":false,"is_cdn":false,"is_resproxy":false,"is_dcproxy":false,
@@ -105,6 +106,47 @@ func TestPresentOrder(t *testing.T) {
 		if got[i] != want[i] {
 			t.Fatalf("position %d: got %q, want %q\nfull: %v", i, got[i], want[i], got)
 		}
+	}
+}
+
+// freeKeyAnswer is what a free key serves since 2026-10-20: Tor and relay beside
+// the VPN flag, and the location and AS, each carrying every member.
+const freeKeyAnswer = `{
+  "ip":"146.70.116.130","is_vpn":true,"is_relay":false,"is_tor":false,"relay":{},"tor":{},
+  "location":{"continent":"EU","continent_name":"Europe","country":"AT","country_name":"Austria",
+    "timezone":"Europe/Vienna","currency_code":"EUR","currency_name":"Euro","currency_symbol":"€",
+    "flag_emoji":"🇦🇹","flag_unicode":"U+1F1E6 U+1F1F9"},
+  "asn":{"asn":9009,"name":"M247 Europe SRL","domain":"m247global.com","type":"hosting",
+    "prefix":"146.70.116.0/24"},
+  "is_bogon":false
+}`
+
+// The location and the AS print after the detail objects, each with its own
+// fields in Columns' order.
+func TestPresentListsLocationAndAsnAfterTheDetails(t *testing.T) {
+	got := flattenJSON(t, freeKeyAnswer).Present()
+	want := []string{"ip", "is_bogon", "is_vpn", "is_relay", "is_tor", "relay", "tor"}
+	for _, col := range Columns {
+		if strings.HasPrefix(col, "location.") || strings.HasPrefix(col, "asn.") {
+			want = append(want, col)
+		}
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v\nwant %v", got, want)
+	}
+}
+
+// --show-absent lists every field in its place, but never vpn.method, which keeps
+// its CSV column though no answer carries it since 2026-10-20.
+func TestAllLeavesOutTheRetiredColumn(t *testing.T) {
+	got := flattenJSON(t, freeAnswer).All()
+	for _, f := range got {
+		if f == "vpn.method" {
+			t.Fatalf("All lists vpn.method, which no answer carries: %v", got)
+		}
+	}
+	if len(got) != len(Columns)-1 {
+		t.Errorf("All lists %d fields, want every column but vpn.method (%d): %v", len(got), len(Columns)-1, got)
 	}
 }
 
