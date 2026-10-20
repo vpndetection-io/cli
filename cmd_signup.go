@@ -45,8 +45,8 @@ Description:
   your API keys this machine should hold, and nothing is typed or pasted here.
   If no browser opens, both URLs are printed.
 
-  You do not need an account to use this tool: the free tier answers 'ip' and
-  'is_vpn' with no key at all.
+  You do not need an account to use this tool: with no key at all a lookup
+  answers 'ip' and 'is_vpn', and a free key adds Tor, relay, location and asn.
 
 Options:
   --no-browser

@@ -24,7 +24,9 @@ Description:
   An address that could not be answered gets its error in the output, in
   place of an answer, and the command then exits 1.
 
-  It works with no account at all: the free tier answers 'ip' and 'is_vpn'.
+  It works with no account at all: without a key a lookup answers 'ip' and
+  'is_vpn'. A free key adds Tor, relay, location and asn, and every paid plan
+  answers every field.
 
 Examples:
   # One address.

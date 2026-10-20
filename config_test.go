@@ -11,8 +11,8 @@ import (
 )
 
 // The order is --key, then the environment, then the active session, then
-// nothing - and "nothing" is a working state rather than an error, because the
-// free tier needs no key.
+// nothing - and "nothing" is a working state rather than an error, because a
+// lookup needs no key.
 func TestResolveKeyPrecedence(t *testing.T) {
 	cfg := NewConfig()
 	cfg.Sessions["work"] = &Session{Key: "from-session"}

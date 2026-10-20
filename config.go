@@ -257,8 +257,8 @@ func (c Config) ActiveSessionName() string {
 // ResolveKey is the API key to present, and where it came from.
 //
 // The order is deliberate: an explicit flag beats the environment, which beats
-// stored state, and no key at all is a valid answer rather than an error - the
-// free tier needs none. A command that genuinely requires one says so itself,
+// stored state, and no key at all is a valid answer rather than an error - a
+// lookup needs none. A command that genuinely requires one says so itself,
 // with a message naming how to get one.
 //
 // A key given for one run is trimmed, as login trims what it stores: it goes
