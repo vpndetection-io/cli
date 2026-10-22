@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.1 - 2026-10-22
+
+### Fixes
+
+- Take sdk-go v5.10.0: read dates only in the zones they allow ([`8a9a663`](https://github.com/vpndetection-io/cli/commit/8a9a663d4fede294ac63c3696ceb8d34f408ed55))
+
 ## 1.11.0 - 2026-10-20
 
 ### Features
