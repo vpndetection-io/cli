@@ -32,10 +32,10 @@ Description:
 
 Commands:
   list                 published datasets, with your license beside each.
-  metadata <id>        what is inside one: columns, row count, sizes, build date.
-  checksum <id>        digests of one published file.
-  download <id> [out]  fetch it, verifying the checksum.
-  url <id>             print a time-limited download URL, for curl or wget.
+  metadata <ID>        what is inside one: columns, row count, sizes, build date.
+  checksum <ID>        digests of one published file.
+  download <ID> [out]  fetch it, verifying the checksum.
+  url <ID>             print a time-limited download URL, for curl or wget.
   downloads            your organization's recent download attempts.
 
 Examples:
@@ -105,22 +105,22 @@ func cmdDatabase() error {
 		return dbList(ctx, db, fJSON)
 	case "metadata", "meta":
 		if len(args) != 2 {
-			return errors.New("usage: database metadata <id>")
+			return errors.New("usage: database metadata <ID>")
 		}
 		return dbMetadata(ctx, db, args[1])
 	case "checksum", "checksums":
 		if len(args) != 2 {
-			return errors.New("usage: database checksum <id>")
+			return errors.New("usage: database checksum <ID>")
 		}
 		return dbChecksum(ctx, db, args[1], fFormat, fJSON)
 	case "url":
 		if len(args) != 2 {
-			return errors.New("usage: database url <id>")
+			return errors.New("usage: database url <ID>")
 		}
 		return dbURL(ctx, db, args[1], fFormat)
 	case "download", "dl":
 		if len(args) < 2 || len(args) > 3 {
-			return errors.New("usage: database download <id> [<output>]")
+			return errors.New("usage: database download <ID> [<output>]")
 		}
 		out := ""
 		if len(args) == 3 {
