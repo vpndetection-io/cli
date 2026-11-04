@@ -41,6 +41,12 @@ curl -Ls https://github.com/vpndetection-io/cli/releases/latest/download/deb.sh 
 ### Windows
 
 ```powershell
+winget install VPNDetection.CLI
+```
+
+Or with Chocolatey:
+
+```powershell
 choco install vpndetection
 ```
 
