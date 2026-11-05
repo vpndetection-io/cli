@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.4 - 2026-11-05
+
+### Fixes
+
+- Check a download against the checksum taken before it, not after ([`225d011`](https://github.com/vpndetection-io/cli/commit/225d011f4e4ef7fd0e429b1e72c453cb1e918b7e))
+
 ## 1.11.3 - 2026-11-02
 
 ### Fixes
