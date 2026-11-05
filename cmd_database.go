@@ -264,8 +264,15 @@ func dbDownloads(ctx context.Context, db *vpndetection.DatabaseAPI, limit int, a
 	return w.Flush()
 }
 
+// The database calls a download makes, which *vpndetection.DatabaseAPI answers and a test can stand in for.
+type databaseFiles interface {
+	Download(ctx context.Context, id string, format vpndetection.Format, dst io.Writer) (int64, error)
+	DownloadFile(ctx context.Context, id string, format vpndetection.Format, path string) (int64, error)
+	Checksums(ctx context.Context, id string, format vpndetection.Format) (*vpndetection.Checksums, error)
+}
+
 func dbDownload(
-	ctx context.Context, db *vpndetection.DatabaseAPI,
+	ctx context.Context, db databaseFiles,
 	id, format, out string, toStdout, noVerify bool,
 ) error {
 	f := vpndetection.Format(format)
@@ -285,6 +292,14 @@ func dbDownload(
 		out = id + "." + extensionFor(f)
 	}
 
+	// The checksum before the download, not after: a download is of the build live when it starts, so a
+	// checksum taken after a long transfer could name a build published meanwhile and call a good file bad.
+	var sums *vpndetection.Checksums
+	var sumsErr error
+	if !noVerify {
+		sums, sumsErr = db.Checksums(ctx, id, f)
+	}
+
 	fmt.Fprintf(os.Stderr, "downloading %s (%s) to %s...\n", id, format, out)
 	n, err := db.DownloadFile(ctx, id, f, out)
 	if err != nil {
@@ -295,11 +310,10 @@ func dbDownload(
 	if noVerify {
 		return nil
 	}
-	sums, err := db.Checksums(ctx, id, f)
-	if err != nil {
+	if sumsErr != nil {
 		// The file is on disk and intact as far as we know; failing the command
 		// over an unavailable checksum would throw away a good download.
-		fmt.Fprintf(os.Stderr, "warn: could not fetch checksums to verify: %v\n", explain(err))
+		fmt.Fprintf(os.Stderr, "warn: could not fetch checksums to verify: %v\n", explain(sumsErr))
 		return nil
 	}
 	if sums.SHA256 == "" {
@@ -311,9 +325,13 @@ func dbDownload(
 		return err
 	}
 	if got != sums.SHA256 {
-		return fmt.Errorf(
-			"checksum mismatch: got %s, expected %s\n%s is not the published file and should be deleted",
-			got, sums.SHA256, out)
+		// A build published between the checksum and the download's start: the checksum now names it.
+		again, err := db.Checksums(ctx, id, f)
+		if err != nil || again.SHA256 != got {
+			return fmt.Errorf(
+				"checksum mismatch: got %s, expected %s\n%s is not the published file and should be deleted",
+				got, sums.SHA256, out)
+		}
 	}
 	fmt.Fprintln(os.Stderr, "sha256 verified")
 	return nil
