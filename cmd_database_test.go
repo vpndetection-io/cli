@@ -85,7 +85,10 @@ func sum256(b []byte) string {
 // The download is of the build live when it starts; a build published during it moves the checksum on.
 func TestDownloadVerifiesAgainstTheChecksumTakenBeforeIt(t *testing.T) {
 	a, b := []byte("build a"), []byte("build b")
-	f := &fakeFiles{file: a, sums: []string{sum256(a), sum256(b)}, onDownload: func(f *fakeFiles) { f.published = true }}
+	f := &fakeFiles{
+		file: a, sums: []string{sum256(a), sum256(b)},
+		onDownload: func(f *fakeFiles) { f.published = true },
+	}
 	out := filepath.Join(t.TempDir(), "x.csv.gz")
 	if err := dbDownload(context.Background(), f, "x_v1", "csvgz", out, false, false); err != nil {
 		t.Fatalf("a good file read as bad: %v", err)
@@ -96,7 +99,10 @@ func TestDownloadVerifiesAgainstTheChecksumTakenBeforeIt(t *testing.T) {
 // asked once more names it.
 func TestDownloadAsksAgainWhenABuildWentLiveBeforeItStarted(t *testing.T) {
 	a, b := []byte("build a"), []byte("build b")
-	f := &fakeFiles{file: b, sums: []string{sum256(a), sum256(b)}, onDownload: func(f *fakeFiles) { f.published = true }}
+	f := &fakeFiles{
+		file: b, sums: []string{sum256(a), sum256(b)},
+		onDownload: func(f *fakeFiles) { f.published = true },
+	}
 	out := filepath.Join(t.TempDir(), "x.csv.gz")
 	if err := dbDownload(context.Background(), f, "x_v1", "csvgz", out, false, false); err != nil {
 		t.Fatalf("the newer build's file read as bad: %v", err)
