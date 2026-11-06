@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.5 - 2026-11-06
+
+### Fixes
+
+- Write `<id>` again in the database command's usage ([`cc9b732`](https://github.com/vpndetection-io/cli/commit/cc9b732e254c6c044a883e4dd1f79f68731e837f))
+
 ## 1.11.4 - 2026-11-05
 
 ### Fixes
