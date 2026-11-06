@@ -60,12 +60,12 @@ refuses it. Anything internal that wants the binary pulls the public image.
 
 ## Gotchas hit building it
 
-- **A download is checked against the checksum taken BEFORE it** (1.11.4, and the
-  internetdata CLI's 1.4.10). The download is of the build live when it starts, so
-  a checksum fetched after a long transfer could name a build published meanwhile
-  and call a good file bad; a mismatch asks once more, for a build that went live
-  between the two requests. `TestDownloadVerifiesAgainstTheChecksumTakenBeforeIt`
-  holds the order.
+- **A download is checked against the checksum taken BEFORE it** (1.11.4). The
+  download is of the build live when it starts, so a checksum fetched after a
+  long transfer could name a build published meanwhile and call a good file bad;
+  a mismatch asks once more, for a build that went live between the two
+  requests. `TestDownloadVerifiesAgainstTheChecksumTakenBeforeIt` holds the
+  order.
 - **Two Go versions: the BUILD and the FLOOR.** The Dockerfile, `release.yml`,
   and ci.yml's cross and govulncheck legs build on an exact patch, 1.27.3; move
   all four together, since govulncheck judges the Go that ships. A Go patch
