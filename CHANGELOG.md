@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.6 - 2026-11-09
+
+### Fixes
+
+- Take libgo-complete v1.0.3: keep other zsh completions on uninstall ([`d79be1e`](https://github.com/vpndetection-io/cli/commit/d79be1e8cf4379614d5f6c7f310618ff6db01936))
+
 ## 1.11.5 - 2026-11-06
 
 ### Fixes
