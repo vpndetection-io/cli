@@ -268,16 +268,18 @@ Also spelled `entitlement`. Usage counts against the anniversary of your subscri
 
 ### Databases
 
-The same classifications, published as files you host yourself. Access is granted by contract and needs a key carrying the `db.download` scope.
+The same classifications, published as files you host yourself. Tor IP, Relay IP and Relay Provider are Open: every organization holds a standard license to them, free under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and `db list --json` marks each one `"open": true`. Every other database is licensed by contract. A download needs a key carrying the `db.download` scope.
 
 ```console
 $ vpndetection db list
-ID          NAME     LICENSE   STANDING   TERM
-vpn_ip_v1   VPN IP   standard  licensed   renews 2027-01-04
+ID         NAME    LICENSE   STANDING    TERM
+vpn_ip_v1  VPN IP  standard  licensed    renews 2027-01-04
+tor_ip_v1  Tor IP  standard  licensed
+cdn_ip_v1  CDN IP            unlicensed
 
 $ vpndetection db metadata vpn_ip_v1
 $ vpndetection db download vpn_ip_v1
-$ vpndetection db download cdn_ip_v1 --format mmdb cdn.mmdb
+$ vpndetection db download tor_ip_v1 --format mmdb tor.mmdb
 $ curl -fL "$(vpndetection db url vpn_ip_v1)" -o vpn_ip_v1.csv.gz
 ```
 
