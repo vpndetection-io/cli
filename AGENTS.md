@@ -67,7 +67,7 @@ refuses it. Anything internal that wants the binary pulls the public image.
   requests. `TestDownloadVerifiesAgainstTheChecksumTakenBeforeIt` holds the
   order.
 - **Two Go versions: the BUILD and the FLOOR.** The Dockerfile, `release.yml`,
-  and ci.yml's cross and govulncheck legs build on an exact patch, 1.27.3; move
+  and ci.yml's cross and govulncheck legs build on an exact patch, 1.27.4; move
   all four together, since govulncheck judges the Go that ships. A Go patch
   that fixes an advisory reachable here is that bump plus a patch release, with
   no code change and nobody's review: an unpinned build would ship it only with
