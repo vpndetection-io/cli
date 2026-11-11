@@ -76,7 +76,7 @@ func (c *Client) HasKey() bool { return c.key != "" }
 // duplicates collapsed, a failing address carrying its error rather than
 // failing the batch - so nothing here re-implements concurrency. POST /batch
 // needs a paid plan, so without a key each address is its own lookup
-// (lookupEach), and so it is for a Trial key, an org on no paid plan, whose
+// (lookupEach), and so it is for a key on the free plan, Unlimited, whose
 // batch of more than one address the API answers 402.
 //
 // A bogon is answered by the SDK without a request and is not cached: it costs
@@ -132,8 +132,8 @@ func (c *Client) LookupBatch(
 }
 
 // lookupEach answers addresses one GET each, at the batch width, for a caller
-// whose batch is refused: no key, or a Trial key. Past the API's rate for the
-// Unlimited tier, a lookup is answered 429 with Retry-After, which the SDK
+// whose batch is refused: no key, or a key on the free plan. Past the API's
+// rate for Unlimited, a lookup is answered 429 with Retry-After, which the SDK
 // waits out and retries.
 func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndetection.BatchResult {
 	answers := make([]vpndetection.BatchResult, len(ips))

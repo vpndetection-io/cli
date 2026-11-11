@@ -57,8 +57,8 @@ var Columns = []string{
 	"location.flag_emoji", "location.flag_unicode",
 	"asn.asn", "asn.name", "asn.domain", "asn.type", "asn.prefix",
 
-	// On a trial key's answers alone: false for the day's full lookups, true once
-	// they are spent and the answer is Unlimited's.
+	// On a free-plan key's answers alone: false for its daily trial's lookups with
+	// every field, true once they are spent and the answer is Unlimited's.
 	"trial_expired",
 }
 
