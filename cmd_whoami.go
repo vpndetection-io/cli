@@ -67,7 +67,7 @@ func cmdWhoami() error {
 			return fmt.Errorf("not authenticated; run `%s login`, or set VPNDETECTION_API_KEY", progBase)
 		}
 		fmt.Println("not authenticated")
-		fmt.Printf("\nLookups still work: without a key they answer VPN, Tor, relay, location and asn.\n")
+		fmt.Printf("\nLookups still work: they answer VPN, Tor, relay, location and asn with no daily cap.\n")
 		fmt.Printf("Run `%s login` to use a key, or `%s signup` to create an account.\n", progBase, progBase)
 		return nil
 	}
@@ -104,6 +104,19 @@ func cmdWhoami() error {
 	}
 
 	fmt.Printf("\nplan         %s\n", acct.Plan.Key)
+	if acct.Plan.Key == "trial" {
+		// An org on no paid plan (2026-11-11): its first lookups each UTC day answer every field
+		// and the rest as Unlimited, so it has a day of full lookups and nothing that refuses it.
+		fmt.Printf("used         %s of %s full lookups today\n",
+			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
+		if acct.Usage.Quota > 0 {
+			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
+		}
+		fmt.Printf("past them    lookups answer as Unlimited until the day resets\n")
+		fmt.Printf("resets       %s (%s)\n",
+			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
+		return nil
+	}
 	fmt.Printf("fields       %s tier\n", acct.Plan.Tier)
 
 	fmt.Printf("\nused         %s of %s\n",

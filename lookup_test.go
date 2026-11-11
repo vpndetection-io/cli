@@ -143,6 +143,53 @@ func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	}
 }
 
+// A Trial key, an org on no paid plan, may not batch more than one address: the API answers 402 for each, and the
+// CLI looks each up on its own instead, answering every one.
+func TestATrialKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
+	var batches, gets atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			batches.Add(1)
+			w.WriteHeader(http.StatusPaymentRequired)
+			_, _ = fmt.Fprint(w, `{"error":"POST /batch needs a paid plan"}`)
+			return
+		}
+		gets.Add(1)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ip": strings.TrimPrefix(r.URL.Path, "/"), "is_vpn": false, "trial_expired": true,
+		})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "trial-key")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	addrs := []string{"9.1.0.1", "9.1.0.2", "9.1.0.3"}
+	out, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b, g := batches.Load(), gets.Load(); b != 1 || int(g) != len(addrs) {
+		t.Errorf("sent %d batch(es) and %d GET(s), want 1 refused batch, then one GET for each of %d", b, g, len(addrs))
+	}
+	lines := 0
+	for scanner := bufio.NewScanner(out); scanner.Scan(); lines++ {
+		if strings.Contains(scanner.Text(), `"error"`) {
+			t.Errorf("unanswered: %s", scanner.Text())
+		}
+	}
+	if lines != len(addrs) {
+		t.Errorf("wrote %d answer(s), want %d", lines, len(addrs))
+	}
+}
+
 // A lookup exits 1 when any address went unanswered, so a refused key or a
 // spent allowance fails a script, and the output stays what it was: every
 // answer, and each failure in place of its address's answer.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
@@ -74,8 +75,9 @@ func (c *Client) HasKey() bool { return c.key != "" }
 // The SDK's batch keeps its own semantics - answers keyed by address,
 // duplicates collapsed, a failing address carrying its error rather than
 // failing the batch - so nothing here re-implements concurrency. POST /batch
-// needs a key, a free one included, so without one each address is its own
-// lookup (lookupEach).
+// needs a paid plan, so without a key each address is its own lookup
+// (lookupEach), and so it is for a Trial key, an org on no paid plan, whose
+// batch of more than one address the API answers 402.
 //
 // A bogon is answered by the SDK without a request and is not cached: it costs
 // nothing to recompute and would otherwise take a slot.
@@ -109,6 +111,9 @@ func (c *Client) LookupBatch(
 		if answers, err = c.api.LookupBatch(ctx, miss); err != nil {
 			return out, err
 		}
+		if len(miss) > 1 && batchNeedsPaid(answers) {
+			answers = c.lookupEach(ctx, miss)
+		}
 	} else {
 		answers = c.lookupEach(ctx, miss)
 	}
@@ -127,8 +132,9 @@ func (c *Client) LookupBatch(
 }
 
 // lookupEach answers addresses one GET each, at the batch width, for a caller
-// without a key. Past the API's rate for an address without a key, a lookup is
-// answered 429 with Retry-After, which the SDK waits out and retries.
+// whose batch is refused: no key, or a Trial key. Past the API's rate for the
+// Unlimited tier, a lookup is answered 429 with Retry-After, which the SDK
+// waits out and retries.
 func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndetection.BatchResult {
 	answers := make([]vpndetection.BatchResult, len(ips))
 	group := new(errgroup.Group)
@@ -147,6 +153,21 @@ func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndet
 		out[ip] = answers[i]
 	}
 	return out
+}
+
+// batchNeedsPaid reports whether the API refused a whole batch as a paid
+// plan's: every address carrying its 402.
+func batchNeedsPaid(answers map[string]vpndetection.BatchResult) bool {
+	if len(answers) == 0 {
+		return false
+	}
+	for _, a := range answers {
+		var apiErr *vpndetection.Error
+		if !errors.As(a.Err, &apiErr) || apiErr.StatusCode != http.StatusPaymentRequired {
+			return false
+		}
+	}
+	return true
 }
 
 // Database is the licensed-dataset half of the API.
