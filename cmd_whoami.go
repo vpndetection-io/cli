@@ -103,10 +103,10 @@ func cmdWhoami() error {
 		fmt.Printf("expires      %s\n", acct.Apikey.Expires.Format(time.RFC3339))
 	}
 
-	if acct.Plan.Key == "trial" {
-		// An org on no paid plan is on the Unlimited plan (2026-11-11): every lookup is answered with
-		// no cap, and its first ones each UTC day with every field, which is what the entitlement
-		// counts under the key `trial`. Nothing refuses it.
+	if acct.Plan.Key == freePlanKey {
+		// The free plan, Unlimited (2026-11-11): every lookup is answered with no cap, and the first
+		// ones each UTC day with every field, its daily trial, which is what its usage counts.
+		// Nothing refuses it.
 		fmt.Printf("\nplan         Unlimited\n")
 		fmt.Printf("every field  %s of %s lookups today\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
@@ -150,6 +150,9 @@ func usageBar(used, quota int64) string {
 		strings.Repeat("#", filled), strings.Repeat(" ", width-filled),
 		float64(used)/float64(quota)*100)
 }
+
+// freePlanKey is the plan an org with no subscription is on, which the site and console call Unlimited.
+const freePlanKey = "free"
 
 // quotaText renders an allowance, naming a plan that includes none rather than
 // printing a bare 0 the reader has to interpret.
