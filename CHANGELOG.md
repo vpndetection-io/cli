@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.12.3 - 2026-11-11
+
+### Fixes
+
+- Name Unlimited the free plan in signup's help and the package listings ([`dbc12cd`](https://github.com/vpndetection-io/cli/commit/dbc12cdb1e3f3756ad5cf669b746239ab60db165))
+
 ## 1.12.2 - 2026-11-11
 
 ### Fixes
