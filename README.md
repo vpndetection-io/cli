@@ -9,7 +9,7 @@ Look up what an IP address is - a VPN exit, a hosting or CDN range, a Tor node, 
 
 ## Getting Started
 
-No account is needed to start: without a key a lookup answers `ip` and `is_vpn`, up to 1000 a day per source address. A free key adds Tor and relay detection, where the address is and the AS that announces it, and every paid plan answers every field.
+No account is needed to start: without a key a lookup answers whether the address is a VPN, a Tor node or a relay, where it is and the AS that announces it, with no daily cap: 60 lookups a minute from each source address, one address per request. A free key adds the hosting, CDN and proxy flags and looks addresses up in batches of up to 1,000, and every paid plan answers every field.
 
 ### macOS
 

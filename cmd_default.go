@@ -24,9 +24,10 @@ Description:
   An address that could not be answered gets its error in the output, in
   place of an answer, and the command then exits 1.
 
-  It works with no account at all: without a key a lookup answers 'ip' and
-  'is_vpn'. A free key adds Tor, relay, location and asn, and every paid plan
-  answers every field.
+  It works with no account at all: without a key a lookup answers whether the
+  address is a VPN, a Tor node or a relay, with its location and asn, 60 a
+  minute. A free key adds the hosting, CDN and proxy flags and looks addresses
+  up in batches, and every paid plan answers every field.
 
 Examples:
   # One address.

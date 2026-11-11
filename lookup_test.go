@@ -19,7 +19,8 @@ import (
 
 // Chunking to the batch endpoint's 1000 belongs to the SDK, so the bulk path
 // must hand it everything it read rather than capping or splitting on its own:
-// 2500 addresses are three requests to POST /batch and one answer each.
+// 2500 addresses are three requests to POST /batch and one answer each, with a
+// key, which the batch needs.
 func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	var batches atomic.Int32
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +47,7 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	t.Cleanup(api.Close)
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_API_KEY", "test-key")
 	t.Setenv("VPNDETECTION_SESSION", "")
 	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
 	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
@@ -94,6 +95,67 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	}
 }
 
+// POST /batch needs a key, so without one each address is its own GET, answered
+// all the same, and an input longer than a minute's lookups says once, on
+// stderr, why it pauses.
+func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
+	var gets atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.Header.Get("Authorization") != "" {
+			t.Errorf("requested %s %s with %q, want GET without a key", r.Method, r.URL.Path,
+				r.Header.Get("Authorization"))
+			http.NotFound(w, r)
+			return
+		}
+		gets.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ip": strings.TrimPrefix(r.URL.Path, "/"), "is_vpn": false})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	addrs := make([]string, keylessPerMinute+1)
+	for i := range addrs {
+		addrs[i] = fmt.Sprintf("9.1.0.%d", i+1)
+	}
+	var out *os.File
+	stderr, err := capture(t, &os.Stderr, func() error {
+		var err error
+		out, err = captureStdout(t, func() error {
+			return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
+		})
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := int(gets.Load()); n != len(addrs) {
+		t.Errorf("sent %d GET(s), want one for each of %d addresses", n, len(addrs))
+	}
+	lines := 0
+	for scanner := bufio.NewScanner(out); scanner.Scan(); lines++ {
+		if strings.Contains(scanner.Text(), `"error"`) {
+			t.Errorf("unanswered: %s", scanner.Text())
+		}
+	}
+	if lines != len(addrs) {
+		t.Errorf("wrote %d answer(s), want %d", lines, len(addrs))
+	}
+	notice, err := io.ReadAll(stderr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(string(notice), "without an API key"); n != 1 {
+		t.Errorf("stderr says why it pauses %d time(s), want once:\n%s", n, notice)
+	}
+}
+
 // A lookup exits 1 when any address went unanswered, so a refused key or a
 // spent allowance fails a script, and the output stays what it was: every
 // answer, and each failure in place of its address's answer.
@@ -106,7 +168,7 @@ func TestLookupReportsAnUnansweredAddress(t *testing.T) {
 	t.Cleanup(api.Close)
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_API_KEY", "test-key")
 	t.Setenv("VPNDETECTION_SESSION", "")
 	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
 	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
@@ -150,7 +212,7 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 	t.Cleanup(api.Close)
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_API_KEY", "test-key")
 	t.Setenv("VPNDETECTION_SESSION", "")
 	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
 	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
@@ -180,16 +242,23 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 // rewound for reading, with fn's error.
 func captureStdout(t *testing.T, fn func() error) (*os.File, error) {
 	t.Helper()
-	file, err := os.CreateTemp(t.TempDir(), "stdout")
+	return capture(t, &os.Stdout, fn)
+}
+
+// capture runs fn with the stream pointed at a file, and returns that file
+// rewound for reading, with fn's error.
+func capture(t *testing.T, stream **os.File, fn func() error) (*os.File, error) {
+	t.Helper()
+	file, err := os.CreateTemp(t.TempDir(), "stream")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = file.Close() })
 
-	saved := os.Stdout
-	os.Stdout = file
+	saved := *stream
+	*stream = file
 	fnErr := fn()
-	os.Stdout = saved
+	*stream = saved
 	if _, err := file.Seek(0, 0); err != nil {
 		t.Fatal(err)
 	}

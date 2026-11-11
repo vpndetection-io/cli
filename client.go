@@ -7,6 +7,7 @@ import (
 	"os"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
+	"golang.org/x/sync/errgroup"
 )
 
 // Client is the SDK client plus this CLI's own disk cache.
@@ -72,7 +73,9 @@ func (c *Client) HasKey() bool { return c.key != "" }
 //
 // The SDK's batch keeps its own semantics - answers keyed by address,
 // duplicates collapsed, a failing address carrying its error rather than
-// failing the batch - so nothing here re-implements concurrency.
+// failing the batch - so nothing here re-implements concurrency. POST /batch
+// needs a key, a free one included, so without one each address is its own
+// lookup (lookupEach).
 //
 // A bogon is answered by the SDK without a request and is not cached: it costs
 // nothing to recompute and would otherwise take a slot.
@@ -100,9 +103,14 @@ func (c *Client) LookupBatch(
 		return out, nil
 	}
 
-	answers, err := c.api.LookupBatch(ctx, miss)
-	if err != nil {
-		return out, err
+	var answers map[string]vpndetection.BatchResult
+	if c.HasKey() {
+		var err error
+		if answers, err = c.api.LookupBatch(ctx, miss); err != nil {
+			return out, err
+		}
+	} else {
+		answers = c.lookupEach(ctx, miss)
 	}
 	fresh := make(map[string]*vpndetection.Result, len(answers))
 	for ip, answer := range answers {
@@ -116,6 +124,35 @@ func (c *Client) LookupBatch(
 	}
 	c.cache.PutBatch(fresh)
 	return out, nil
+}
+
+// keylessPerMinute is how many lookups the API answers from one address without
+// a key each UTC minute, as the docs' Rate Limits page states it.
+const keylessPerMinute = 60
+
+// lookupEach answers addresses one GET each, at the batch width, for a caller
+// without a key. The API takes keylessPerMinute lookups a minute from an address
+// without one and answers past that with a 429 carrying Retry-After, which the
+// SDK waits out and retries: with fewer requests in flight than a minute admits,
+// each retry lands in the next minute.
+func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndetection.BatchResult {
+	answers := make([]vpndetection.BatchResult, len(ips))
+	group := new(errgroup.Group)
+	group.SetLimit(min(resolveConcurrency(), keylessPerMinute))
+	for i, ip := range ips {
+		group.Go(func() error {
+			r, err := c.api.Lookup(ctx, ip)
+			answers[i] = vpndetection.BatchResult{Result: r, Err: err}
+			return nil
+		})
+	}
+	// Each lookup records its own outcome and returns nil, so this only waits.
+	_ = group.Wait()
+	out := make(map[string]vpndetection.BatchResult, len(ips))
+	for i, ip := range ips {
+		out[ip] = answers[i]
+	}
+	return out
 }
 
 // Database is the licensed-dataset half of the API.

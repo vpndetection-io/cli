@@ -27,7 +27,7 @@ type Config struct {
 	Version int `json:"version"`
 
 	// Active names the session in use. Empty means unauthenticated, which is a
-	// working state: the API answers `ip` and `is_vpn` with no key at all.
+	// working state: the API answers a lookup with no key at all.
 	Active string `json:"active"`
 
 	// Sessions are the stored credentials, keyed by name.
