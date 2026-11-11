@@ -103,20 +103,22 @@ func cmdWhoami() error {
 		fmt.Printf("expires      %s\n", acct.Apikey.Expires.Format(time.RFC3339))
 	}
 
-	fmt.Printf("\nplan         %s\n", acct.Plan.Key)
 	if acct.Plan.Key == "trial" {
-		// An org on no paid plan (2026-11-11): its first lookups each UTC day answer every field
-		// and the rest as Unlimited, so it has a day of full lookups and nothing that refuses it.
-		fmt.Printf("used         %s of %s full lookups today\n",
+		// An org on no paid plan is on the Unlimited plan (2026-11-11): every lookup is answered with
+		// no cap, and its first ones each UTC day with every field, which is what the entitlement
+		// counts under the key `trial`. Nothing refuses it.
+		fmt.Printf("\nplan         Unlimited\n")
+		fmt.Printf("every field  %s of %s lookups today\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		fmt.Printf("past them    lookups answer as Unlimited until the day resets\n")
+		fmt.Printf("past them    lookups answer with Unlimited's fields until the day resets\n")
 		fmt.Printf("resets       %s (%s)\n",
 			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
 		return nil
 	}
+	fmt.Printf("\nplan         %s\n", acct.Plan.Key)
 	fmt.Printf("fields       %s tier\n", acct.Plan.Tier)
 
 	fmt.Printf("\nused         %s of %s\n",
