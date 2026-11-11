@@ -396,9 +396,9 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 	}
 
 	// Nothing is printed about the fields this plan does not include. It was a
-	// summary line here, and on the free tier, where all but a few fields are
-	// absent, it was longer than the answer and appeared under every single
-	// lookup. --show-absent renders them as rows for anyone who wants them, and
+	// summary line here, and on a lookup without a key, where all but a few
+	// fields are absent, it was longer than the answer and appeared under every
+	// single lookup. --show-absent renders them as rows for anyone who wants them, and
 	// the absent-versus-false rule is stated once in the README rather than on
 	// every line of output.
 	return nil

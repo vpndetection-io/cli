@@ -56,6 +56,10 @@ var Columns = []string{
 	"location.timezone", "location.currency_code", "location.currency_name", "location.currency_symbol",
 	"location.flag_emoji", "location.flag_unicode",
 	"asn.asn", "asn.name", "asn.domain", "asn.type", "asn.prefix",
+
+	// On a trial key's answers alone: false for the day's full lookups, true once
+	// they are spent and the answer is Unlimited's.
+	"trial_expired",
 }
 
 // retired are columns no answer carries any more, kept so no CSV column moves.
@@ -239,6 +243,12 @@ func (r Record) listed(absent bool) []string {
 			if strings.HasPrefix(col, obj+".") {
 				emit(col)
 			}
+		}
+	}
+	// A top-level field that is neither a flag nor an object, as trial_expired.
+	for _, col := range Columns {
+		if !strings.Contains(col, ".") {
+			emit(col)
 		}
 	}
 	// A field the API grew since this build must still be printed, or the CLI

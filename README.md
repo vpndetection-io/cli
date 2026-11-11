@@ -336,6 +336,8 @@ How much you get back per lookup depends on the plan behind your key. See the [p
 
 **A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
 
+On a key with no paid plan, each answer carries `trial_expired`: `false` for the day's 100 full lookups, `true` once they're spent and the answer is Unlimited's. `vpndetection whoami` counts them.
+
 ## Caching
 
 Answers are cached on disk, so looking the same address up twice costs one request rather than two.

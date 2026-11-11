@@ -75,6 +75,27 @@ func TestCSVHeaderIsFixed(t *testing.T) {
 	}
 }
 
+// trial_expired came last, so no column moved, and the readable block prints it
+// after the answer's fields, where a trial key's user reads whether the day's
+// full lookups are spent. A paid answer carries none, so prints none.
+func TestTrialExpiredComesLast(t *testing.T) {
+	const spent = `{"ip":"1.1.1.1","is_vpn":true,"is_bogon":false,"trial_expired":true}`
+	if Columns[len(Columns)-1] != "trial_expired" {
+		t.Fatalf("the last column is %s", Columns[len(Columns)-1])
+	}
+	lines := strings.Split(strings.TrimSpace(render(t, FormatPretty, Opts{}, spent)), "\n")
+	if name, value, _ := strings.Cut(lines[len(lines)-1], " "); name != "trial_expired" || strings.TrimSpace(value) != "true" {
+		t.Errorf("the block ends %q", lines[len(lines)-1])
+	}
+	if got := render(t, FormatPretty, Opts{}, maxAnswer); strings.Contains(got, "trial_expired") {
+		t.Errorf("a paid answer printed trial_expired:\n%s", got)
+	}
+	rows := strings.Split(strings.TrimSpace(render(t, FormatCSV, Opts{}, spent, maxAnswer)), "\n")
+	if !strings.HasSuffix(rows[1], ",true") || !strings.HasSuffix(rows[2], ",") {
+		t.Errorf("the trial row ends %q and the paid one %q", rows[1][len(rows[1])-6:], rows[2][len(rows[2])-6:])
+	}
+}
+
 // An empty run still emits the header, so a consumer never has to special-case
 // a zero-row file.
 func TestCSVEmptyStillHasHeader(t *testing.T) {
