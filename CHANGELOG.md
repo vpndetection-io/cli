@@ -8,6 +8,10 @@ What each release changed for you, newest first. Each line is a commit's summary
 
 - Print trial_expired, the last column, on sdk-go 5.13.0 ([`00d4ab2`](https://github.com/vpndetection-io/cli/commit/00d4ab224c1c7fe08ddf22100df215d59674ff54))
 
+### Fixes
+
+- Describe the Unlimited tier in signup's help and the package listings ([`aa7d8c9`](https://github.com/vpndetection-io/cli/commit/aa7d8c9ac6f76f23d998e9e56c3e4874b007c33e))
+
 ## 1.11.9 - 2026-11-11
 
 ### Fixes
