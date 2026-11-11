@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.12.1 - 2026-11-11
+
+### Fixes
+
+- Name a key on no paid plan's plan Unlimited in whoami ([`054331e`](https://github.com/vpndetection-io/cli/commit/054331e746ee2f7d2108183b6f606083bdcd77dd))
+
 ## 1.12.0 - 2026-11-11
 
 ### Features
