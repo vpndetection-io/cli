@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.12.0 - 2026-11-11
+
+### Features
+
+- Print trial_expired, the last column, on sdk-go 5.13.0 ([`00d4ab2`](https://github.com/vpndetection-io/cli/commit/00d4ab224c1c7fe08ddf22100df215d59674ff54))
+
 ## 1.11.9 - 2026-11-11
 
 ### Fixes
