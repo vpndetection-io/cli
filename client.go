@@ -126,19 +126,13 @@ func (c *Client) LookupBatch(
 	return out, nil
 }
 
-// keylessPerMinute is how many lookups the API answers from one address without
-// a key each UTC minute, as the docs' Rate Limits page states it.
-const keylessPerMinute = 60
-
 // lookupEach answers addresses one GET each, at the batch width, for a caller
-// without a key. The API takes keylessPerMinute lookups a minute from an address
-// without one and answers past that with a 429 carrying Retry-After, which the
-// SDK waits out and retries: with fewer requests in flight than a minute admits,
-// each retry lands in the next minute.
+// without a key. Past the API's rate for an address without a key, a lookup is
+// answered 429 with Retry-After, which the SDK waits out and retries.
 func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndetection.BatchResult {
 	answers := make([]vpndetection.BatchResult, len(ips))
 	group := new(errgroup.Group)
-	group.SetLimit(min(resolveConcurrency(), keylessPerMinute))
+	group.SetLimit(resolveConcurrency())
 	for i, ip := range ips {
 		group.Go(func() error {
 			r, err := c.api.Lookup(ctx, ip)

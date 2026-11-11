@@ -59,7 +59,6 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 		writer     lib.Writer
 		flushed    bool
 		unanswered bool
-		paced      bool
 	)
 
 	// Buffered until the shape is known, because the format depends on the
@@ -89,13 +88,6 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 		}
 		if writer == nil {
 			openWriter(!flushed && len(chunk) == 1 && !opts.forceBulk)
-		}
-		// More than a minute's lookups without a key pause each minute: say why once, on
-		// stderr, which a script's parsed output never reads.
-		if !client.HasKey() && !paced && (flushed || len(chunk) > keylessPerMinute) {
-			paced = true
-			fmt.Fprintf(os.Stderr, "without an API key each address is its own lookup, %d a minute; "+
-				"a free key looks them up in batches: `%s signup`\n", keylessPerMinute, progBase)
 		}
 		flushed = true
 		answers, err := client.LookupBatch(ctx, chunk)

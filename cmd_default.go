@@ -25,9 +25,9 @@ Description:
   place of an answer, and the command then exits 1.
 
   It works with no account at all: without a key a lookup answers whether the
-  address is a VPN, a Tor node or a relay, with its location and asn, 60 a
-  minute. A free key adds the hosting, CDN and proxy flags and looks addresses
-  up in batches, and every paid plan answers every field.
+  address is a VPN, a Tor node or a relay, with its location and asn, with no
+  daily cap. A free key adds the hosting, CDN and proxy flags and looks
+  addresses up in batches, and every paid plan answers every field.
 
 Examples:
   # One address.

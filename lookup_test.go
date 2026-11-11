@@ -96,8 +96,7 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 }
 
 // POST /batch needs a key, so without one each address is its own GET, answered
-// all the same, and an input longer than a minute's lookups says once, on
-// stderr, why it pauses.
+// all the same.
 func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	var gets atomic.Int32
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -120,17 +119,12 @@ func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
 	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
 
-	addrs := make([]string, keylessPerMinute+1)
+	addrs := make([]string, 25)
 	for i := range addrs {
 		addrs[i] = fmt.Sprintf("9.1.0.%d", i+1)
 	}
-	var out *os.File
-	stderr, err := capture(t, &os.Stderr, func() error {
-		var err error
-		out, err = captureStdout(t, func() error {
-			return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
-		})
-		return err
+	out, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -146,13 +140,6 @@ func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	}
 	if lines != len(addrs) {
 		t.Errorf("wrote %d answer(s), want %d", lines, len(addrs))
-	}
-	notice, err := io.ReadAll(stderr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n := strings.Count(string(notice), "without an API key"); n != 1 {
-		t.Errorf("stderr says why it pauses %d time(s), want once:\n%s", n, notice)
 	}
 }
 
@@ -242,23 +229,16 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 // rewound for reading, with fn's error.
 func captureStdout(t *testing.T, fn func() error) (*os.File, error) {
 	t.Helper()
-	return capture(t, &os.Stdout, fn)
-}
-
-// capture runs fn with the stream pointed at a file, and returns that file
-// rewound for reading, with fn's error.
-func capture(t *testing.T, stream **os.File, fn func() error) (*os.File, error) {
-	t.Helper()
-	file, err := os.CreateTemp(t.TempDir(), "stream")
+	file, err := os.CreateTemp(t.TempDir(), "stdout")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = file.Close() })
 
-	saved := *stream
-	*stream = file
+	saved := os.Stdout
+	os.Stdout = file
 	fnErr := fn()
-	*stream = saved
+	os.Stdout = saved
 	if _, err := file.Seek(0, 0); err != nil {
 		t.Fatal(err)
 	}
