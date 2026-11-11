@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$vsn = if ($env:VSN) { $env:VSN } else { "1.11.7" }
+$vsn = if ($env:VSN) { $env:VSN } else { "1.11.8" }
 $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
     "AMD64" { "amd64" }
     "ARM64" { "arm64" }

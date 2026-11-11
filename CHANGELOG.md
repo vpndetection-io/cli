@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.11.8 - 2026-11-11
+
+### Fixes
+
+- Look up each address on its own without a key: POST /batch needs one ([`9dd33bc`](https://github.com/vpndetection-io/cli/commit/9dd33bc9d8c4d177fb61d703e0395da665ab7c11))
+
 ## 1.11.7 - 2026-11-11
 
 ### Fixes
