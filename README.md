@@ -28,9 +28,13 @@ The CLI needs macOS 13 Ventura or later. [1.2.0](https://github.com/vpndetection
 Install from our apt repository, which keeps the CLI up to date with `apt upgrade`:
 
 ```bash
-echo "deb [trusted=yes] https://apt.vpndetection.io/ /" | sudo tee /etc/apt/sources.list.d/vpndetection.list
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://apt.vpndetection.io/public.key | sudo tee /etc/apt/keyrings/vpndetection.asc > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/vpndetection.asc] https://apt.vpndetection.io/ /" | sudo tee /etc/apt/sources.list.d/vpndetection.list
 sudo apt update && sudo apt install vpndetection
 ```
+
+The repository is signed by the key with fingerprint `C3C925C1865A4A1044BAAF0A3D9720189DDF8688`, and apt refuses an index it did not sign. If you added the repository with `[trusted=yes]` before, replace that line with the one above: apt still installs from it, but warns on every update that it cannot check the signature.
 
 Or install a single `.deb` without the repository:
 
