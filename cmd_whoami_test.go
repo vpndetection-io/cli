@@ -56,7 +56,8 @@ func TestWhoamiOnTheFreePlan(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab","apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def",`+
+		_, _ = io.WriteString(w, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab",`+
+			`"apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def",`+
 			`"expires":null,"allowed_cidrs":[]},`+
 			`"plan":{"key":"free","tier":"free"},"usage":{"requests":37,"quota":100,"hard_limit":null,`+
 			`"window_start":"2026-11-11T00:00:00Z","window_end":"2099-11-12T00:00:00Z"}}`)

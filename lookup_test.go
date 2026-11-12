@@ -143,8 +143,8 @@ func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	}
 }
 
-// A Trial key, an org on no paid plan, may not batch more than one address: the API answers 402 for each, and the
-// CLI looks each up on its own instead, answering every one.
+// A Trial key, an org on no paid plan, may not batch more than one address: the API answers 402 for
+// each, and the CLI looks each up on its own instead, answering every one.
 func TestATrialKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
 	var batches, gets atomic.Int32
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

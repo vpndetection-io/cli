@@ -84,7 +84,8 @@ func TestTrialExpiredComesLast(t *testing.T) {
 		t.Fatalf("the last column is %s", Columns[len(Columns)-1])
 	}
 	lines := strings.Split(strings.TrimSpace(render(t, FormatPretty, Opts{}, spent)), "\n")
-	if name, value, _ := strings.Cut(lines[len(lines)-1], " "); name != "trial_expired" || strings.TrimSpace(value) != "true" {
+	name, value, _ := strings.Cut(lines[len(lines)-1], " ")
+	if name != "trial_expired" || strings.TrimSpace(value) != "true" {
 		t.Errorf("the block ends %q", lines[len(lines)-1])
 	}
 	if got := render(t, FormatPretty, Opts{}, maxAnswer); strings.Contains(got, "trial_expired") {
