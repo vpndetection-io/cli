@@ -7,7 +7,7 @@ require (
 	github.com/mslmio/libgo-complete v1.0.3
 	github.com/mslmio/libgo-iputil v1.1.4
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	go.etcd.io/bbolt v1.5.0
 	golang.org/x/term v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
