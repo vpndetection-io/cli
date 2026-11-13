@@ -21,6 +21,15 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 # the config and cache, which the nonroot image provides at /home/nonroot.
 FROM gcr.io/distroless/static-debian12:nonroot
 
+# GitHub's package page reads source and licenses; url and documentation are
+# the standard keys for the site and the docs.
+LABEL org.opencontainers.image.title="VPNDetection CLI" \
+      org.opencontainers.image.vendor="VPNDetection" \
+      org.opencontainers.image.url="https://vpndetection.io" \
+      org.opencontainers.image.documentation="https://docs.vpndetection.io/integrations/cli" \
+      org.opencontainers.image.source="https://github.com/vpndetection-io/cli" \
+      org.opencontainers.image.licenses="MIT"
+
 COPY --from=builder /dist/vpndetection /usr/local/bin/vpndetection
 
 ENTRYPOINT ["/usr/local/bin/vpndetection"]

@@ -153,6 +153,10 @@ jobs:
           # until they are reading a bug report.
           build-args: |
             VERSION=${{ needs.version.outputs.version }}
+          # A multi-arch image's description on GitHub's package page is its
+          # index's annotation, which no Dockerfile LABEL reaches.
+          annotations: |
+            index:org.opencontainers.image.description=Official CLI for the VPNDetection API (https://vpndetection.io). Look up VPNs, proxies, Tor, hosting and CDN ranges. Docs: https://docs.vpndetection.io/integrations/cli
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
