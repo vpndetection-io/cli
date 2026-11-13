@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/vpndetection-io/sdk-go/v5 v5.13.2
+	github.com/vpndetection-io/sdk-go/v5 v5.14.0
 	golang.org/x/sync v0.25.0
 )
 

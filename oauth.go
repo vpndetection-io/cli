@@ -103,6 +103,7 @@ func revokeToken(ctx context.Context, token string) error {
 // keeps any key off these requests regardless; there is simply none to give.
 func signInAPI() (*vpndetection.OauthAPI, error) {
 	client, err := vpndetection.New(
+		vpndetection.WithHTTPClient(namedHTTPClient()),
 		vpndetection.WithBaseURL(authBaseURL()),
 		vpndetection.WithRetries(resolveRetries()),
 		vpndetection.WithoutCache(),

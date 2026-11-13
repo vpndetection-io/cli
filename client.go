@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 	"golang.org/x/sync/errgroup"
@@ -29,6 +30,7 @@ func NewClient() (*Client, error) {
 	key, _ := gConfig.ResolveKey()
 
 	opts := []vpndetection.Option{
+		vpndetection.WithHTTPClient(namedHTTPClient()),
 		vpndetection.WithoutCache(),
 		vpndetection.WithConcurrency(resolveConcurrency()),
 		vpndetection.WithRetries(resolveRetries()),
@@ -59,6 +61,29 @@ func NewClient() (*Client, error) {
 		}
 	}
 	return c, nil
+}
+
+// namedHTTPClient is the SDK's own default, a 30 second timeout, on a transport
+// that names this CLI on every request ahead of the SDK.
+func namedHTTPClient() *http.Client {
+	return &http.Client{Timeout: 30 * time.Second, Transport: agentTransport{next: http.DefaultTransport}}
+}
+
+// agentTransport puts vpndetection-cli/<version> first in the User-Agent the
+// SDK has already set, vpndetection-go/<version>.
+type agentTransport struct {
+	next http.RoundTripper
+}
+
+func (t agentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// A RoundTripper must not modify the request it is given.
+	named := req.Clone(req.Context())
+	agent := "vpndetection-cli/" + version
+	if sdk := req.Header.Get("User-Agent"); sdk != "" {
+		agent += " " + sdk
+	}
+	named.Header.Set("User-Agent", agent)
+	return t.next.RoundTrip(named)
 }
 
 // Close releases the cache.

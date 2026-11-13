@@ -53,6 +53,13 @@ literally makes it a lookup of the address `--session`. `commandArg` skips the
 value of each value-taking flag, so a session named `database` is not mistaken
 for the command.
 
+**Every SDK client is built with `namedHTTPClient()`**, which puts
+`vpndetection-cli/<version>` ahead of the SDK's `vpndetection-go/<version>` in
+the User-Agent, and keeps the SDK's 30 s timeout, which applies only when no
+client is passed. `NewClient` and `signInAPI` are the two today, and
+`TestEveryRequestNamesTheCLIThenTheSDK` covers those two only: a third
+`vpndetection.New` without it sends the SDK's name alone.
+
 **The only container image is `ghcr.io/vpndetection-io/cli`**, built by the
 release workflow. There is no second build targeting a private registry: a
 script naming one cannot live in a public repo, and the pre-push leak gate
