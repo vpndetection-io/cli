@@ -60,10 +60,14 @@ client is passed. `NewClient` and `signInAPI` are the two today, and
 `TestEveryRequestNamesTheCLIThenTheSDK` covers those two only: a third
 `vpndetection.New` without it sends the SDK's name alone.
 
-**The only container image is `ghcr.io/vpndetection-io/cli`**, built by the
-release workflow. There is no second build targeting a private registry: a
-script naming one cannot live in a public repo, and the pre-push leak gate
-refuses it. Anything internal that wants the binary pulls the public image.
+**The only container build is `ghcr.io/vpndetection-io/cli`**, by the release
+workflow's `docker` job. Docker Hub's `vpndetection/cli` is that image copied
+by digest (`imagetools create`) in a job of its own, so a Docker Hub failure
+cannot cost ghcr; it skips with a warning while `DOCKERHUB_USERNAME` or
+`DOCKERHUB_TOKEN` is unset, and `scripts/update-dockerhub.sh` sets its page
+from `dockerhub/overview.md` on every run. There is no build targeting a
+private registry: a script naming one cannot live in a public repo, and the
+pre-push leak gate refuses it. Anything internal pulls the public image.
 
 ## Gotchas hit building it
 
