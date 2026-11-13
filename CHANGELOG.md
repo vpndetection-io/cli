@@ -2,6 +2,13 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.12.4 - 2026-11-13
+
+### Fixes
+
+- Take pflag v1.1.0: a 32-bit build refuses an int flag it cannot hold ([`9a8c378`](https://github.com/vpndetection-io/cli/commit/9a8c3788986fd90c1872e5a91cc1f0751f2f426d))
+- Name the CLI in every request's User-Agent, on sdk-go v5.14.0 ([`7bfd96f`](https://github.com/vpndetection-io/cli/commit/7bfd96f3e7209949c3c6858fad783ccd231ab3d8))
+
 ## 1.12.3 - 2026-11-11
 
 ### Fixes
