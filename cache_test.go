@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 )
@@ -112,5 +113,34 @@ func TestCacheServesAnAnswerOnlyToTheKeyAndHostThatFetchedIt(t *testing.T) {
 	again.Close()
 	if hit == nil || hit.IsHosting == nil {
 		t.Error("the max key does not get its own cached answer back")
+	}
+}
+
+// An answer past its TTL is not served: a plan changed or an address moved
+// since it was fetched, and the next lookup asks again.
+func TestCacheForgetsAnExpiredAnswer(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	const ip = "45.83.91.1"
+	answer := map[string]*vpndetection.Result{ip: {LookupResponse: vpndetection.LookupResponse{IP: ip}}}
+
+	fresh, err := OpenCache("k", "", time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh.PutBatch(answer)
+	hit := fresh.Get(ip)
+	_ = fresh.Close()
+	if hit == nil {
+		t.Fatal("an answer within its TTL was not served")
+	}
+
+	stale, err := OpenCache("k", "", time.Nanosecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stale.Close()
+	time.Sleep(time.Millisecond)
+	if stale.Get(ip) != nil {
+		t.Error("an answer past its TTL was served")
 	}
 }

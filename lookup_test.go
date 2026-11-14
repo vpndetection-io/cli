@@ -10,8 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	iputil "github.com/mslmio/libgo-iputil"
 	"github.com/vpndetection-io/cli/lib"
@@ -140,6 +142,58 @@ func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {
 	}
 	if lines != len(addrs) {
 		t.Errorf("wrote %d answer(s), want %d", lines, len(addrs))
+	}
+}
+
+// Without a key each address is its own lookup, and as many are in flight as
+// --concurrency allows: no more, and no fewer, or a bulk run is as slow as one
+// address at a time.
+func TestLookupsWithoutAKeyRunAtTheConcurrency(t *testing.T) {
+	const width = 4
+	var inFlight, peak atomic.Int32
+	var opened sync.Once
+	release := make(chan struct{})
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := inFlight.Add(1)
+		defer inFlight.Add(-1)
+		for {
+			p := peak.Load()
+			if n <= p || peak.CompareAndSwap(p, n) {
+				break
+			}
+		}
+		if n == width {
+			opened.Do(func() { close(release) })
+		}
+		select {
+		case <-release:
+		case <-time.After(2 * time.Second):
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ip": strings.TrimPrefix(r.URL.Path, "/"), "is_vpn": false})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache, savedConcurrency := gConfig, fBaseURL, fNoCache, fConcurrency
+	t.Cleanup(func() {
+		gConfig, fBaseURL, fNoCache, fConcurrency = savedConfig, savedBaseURL, savedNoCache, savedConcurrency
+	})
+	gConfig, fBaseURL, fNoCache, fConcurrency = NewConfig(), api.URL, true, width
+
+	addrs := make([]string, 3*width)
+	for i := range addrs {
+		addrs[i] = fmt.Sprintf("9.1.0.%d", i+1)
+	}
+	if _, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if p := peak.Load(); p != width {
+		t.Errorf("at most %d lookup(s) were in flight, want %d", p, width)
 	}
 }
 
