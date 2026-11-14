@@ -160,17 +160,19 @@ This is the address our edge observed, so behind a proxy or a VPN it reports the
 
 ```console
 $ vpndetection 146.70.116.130
-ip                  146.70.116.130
-is_bogon            false
-is_vpn              true
-is_hosting          true
-is_relay            false
-is_tor              false
-is_cdn              false
-vpn.provider        mullvad
-vpn.last_seen       2026-09-12
-hosting.provider    m247
-hosting.confidence  high
+ip                     146.70.116.130
+is_bogon               false
+is_vpn                 true
+is_hosting             true
+is_relay               false
+is_tor                 false
+is_cdn                 false
+vpn.provider           mullvad
+vpn.provider_name      Mullvad
+vpn.last_seen          2026-09-12
+hosting.provider       m247
+hosting.provider_name  M247
+hosting.confidence     high
 ```
 
 Private, reserved and documentation addresses are answered locally without a request, so they cost nothing and work offline.

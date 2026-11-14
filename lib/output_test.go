@@ -224,7 +224,8 @@ func TestFieldSelectsInEveryFormat(t *testing.T) {
     "hosting": {
       "confidence": "high",
       "last_seen": "2026-09-11",
-      "provider": "m247"
+      "provider": "m247",
+      "provider_name": "M247"
     },
     "ip": "146.70.22.220",
     "is_vpn": true,
@@ -234,26 +235,29 @@ func TestFieldSelectsInEveryFormat(t *testing.T) {
   }
 }
 `},
-		{FormatJSONL, `{"hosting":{"confidence":"high","last_seen":"2026-09-11","provider":"m247"},` +
+		{FormatJSONL, `{"hosting":{"confidence":"high","last_seen":"2026-09-11","provider":"m247",` +
+			`"provider_name":"M247"},` +
 			`"ip":"146.70.22.220","is_vpn":true,"vpn":{"provider":"mullvad"}}` + "\n"},
 		{FormatYAML, `146.70.22.220:
   hosting:
     confidence: high
     last_seen: "2026-09-11"
     provider: m247
+    provider_name: M247
   ip: 146.70.22.220
   is_vpn: true
   vpn:
     provider: mullvad
 `},
-		{FormatCSV, "ip,is_vpn,vpn.provider,hosting.provider,hosting.confidence,hosting.last_seen\n" +
-			"146.70.22.220,true,mullvad,m247,high,2026-09-11\n"},
-		{FormatPretty, `ip                  146.70.22.220
-is_vpn              true
-vpn.provider        mullvad
-hosting.provider    m247
-hosting.confidence  high
-hosting.last_seen   2026-09-11
+		{FormatCSV, "ip,is_vpn,vpn.provider,hosting.provider,hosting.provider_name,hosting.confidence," +
+			"hosting.last_seen\n146.70.22.220,true,mullvad,m247,M247,high,2026-09-11\n"},
+		{FormatPretty, `ip                     146.70.22.220
+is_vpn                 true
+vpn.provider           mullvad
+hosting.provider       m247
+hosting.provider_name  M247
+hosting.confidence     high
+hosting.last_seen      2026-09-11
 `},
 	}
 	for _, c := range cases {
@@ -374,7 +378,8 @@ func TestFieldPrintsAnEmptyObjectAsItself(t *testing.T) {
 	}{
 		{maxAnswer, []string{"relay"}, "relay  {}\n"},
 		{maxAnswer, []string{"is_relay", "relay.provider", "relay.last_seen"}, "is_relay  false\nrelay     {}\n"},
-		{freeAnswer, []string{"relay"}, "relay.provider    -\nrelay.confidence  -\nrelay.last_seen   -\n"},
+		{freeAnswer, []string{"relay"}, "relay.provider       -\nrelay.provider_name  -\n" +
+			"relay.confidence     -\nrelay.last_seen      -\n"},
 	}
 	for _, c := range cases {
 		if got := render(t, FormatPretty, Opts{Fields: c.fields}, c.body); got != c.want {
@@ -418,8 +423,9 @@ func TestFieldTakesEveryProxyField(t *testing.T) {
 	}{
 		{[]string{"ip", "resproxy.hits_days_pct", "resproxy.providers_num"},
 			"ip,resproxy.hits_days_pct,resproxy.providers_num\n217.80.249.248,19,18\n"},
-		{[]string{"mobproxy"}, "mobproxy.provider,mobproxy.first_seen,mobproxy.last_seen,mobproxy.hits," +
-			"mobproxy.hits_days_pct,mobproxy.providers_num\np,2026-09-30,2026-10-11,3,2,1\n"},
+		{[]string{"mobproxy"}, "mobproxy.provider,mobproxy.provider_name,mobproxy.first_seen," +
+			"mobproxy.last_seen,mobproxy.hits,mobproxy.hits_days_pct,mobproxy.providers_num\n" +
+			"p,P,2026-09-30,2026-10-11,3,2,1\n"},
 		{[]string{"is_pubproxy", "pubproxy"}, "is_pubproxy,pubproxy.entry,pubproxy.exit," +
 			"pubproxy.protocols,pubproxy.num_ports,pubproxy.num_proxies,pubproxy.last_seen," +
 			"pubproxy.last_usable\ntrue,false,true,\"[\"\"socks5\"\"]\",0,1,2026-10-17,2026-10-17\n"},

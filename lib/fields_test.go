@@ -12,15 +12,16 @@ import (
 // one ABSENT rather than false.
 const freeAnswer = `{"ip":"1.1.1.1","is_vpn":true,"is_bogon":false}`
 
-// maxAnswer is the full shape Max served before 2026-10-20, method included,
-// with a detail object that is present but EMPTY - which means the flag above it
-// is false, not that it is missing.
+// maxAnswer is the full shape Max serves, with the method it served until
+// 2026-10-20, and a detail object that is present but EMPTY - which means the
+// flag above it is false, not that it is missing.
 const maxAnswer = `{
   "ip":"146.70.22.220","is_vpn":true,"is_hosting":true,"is_relay":false,
   "is_tor":false,"is_cdn":false,"is_resproxy":false,"is_dcproxy":false,
   "is_mobproxy":false,
-  "vpn":{"provider":"mullvad","last_seen":"2026-09-12","confidence":"high","method":"scan"},
-  "hosting":{"provider":"m247","confidence":"high","last_seen":"2026-09-11"},
+  "vpn":{"provider":"mullvad","provider_name":"Mullvad","last_seen":"2026-09-12","confidence":"high",
+    "method":"scan"},
+  "hosting":{"provider":"m247","provider_name":"M247","confidence":"high","last_seen":"2026-09-11"},
   "relay":{},"tor":{},"cdn":{},"resproxy":{},"dcproxy":{},"mobproxy":{},
   "is_bogon":false
 }`
@@ -30,10 +31,10 @@ const maxAnswer = `{
 const proxyAnswer = `{
   "ip":"217.80.249.248","is_resproxy":true,"is_dcproxy":false,"is_mobproxy":true,
   "is_pubproxy":true,
-  "resproxy":{"provider":"","first_seen":"2026-07-16","last_seen":"2026-10-12","hits":120,
+  "resproxy":{"provider":"","provider_name":"","first_seen":"2026-07-16","last_seen":"2026-10-12","hits":120,
     "hits_days_pct":19,"providers_num":18},
   "dcproxy":{},
-  "mobproxy":{"provider":"p","first_seen":"2026-09-30","last_seen":"2026-10-11","hits":3,
+  "mobproxy":{"provider":"p","provider_name":"P","first_seen":"2026-09-30","last_seen":"2026-10-11","hits":3,
     "hits_days_pct":2,"providers_num":1},
   "pubproxy":{"entry":false,"exit":true,"protocols":["socks5"],"num_ports":0,"num_proxies":1,
     "last_seen":"2026-10-17","last_usable":"2026-10-17"},
@@ -95,8 +96,8 @@ func TestPresentOrder(t *testing.T) {
 		"ip", "is_bogon",
 		"is_vpn", "is_hosting", "is_relay", "is_tor",
 		"is_cdn", "is_resproxy", "is_dcproxy", "is_mobproxy",
-		"vpn.provider", "vpn.last_seen", "vpn.confidence", "vpn.method",
-		"hosting.provider", "hosting.confidence", "hosting.last_seen",
+		"vpn.provider", "vpn.provider_name", "vpn.last_seen", "vpn.confidence", "vpn.method",
+		"hosting.provider", "hosting.provider_name", "hosting.confidence", "hosting.last_seen",
 		"relay", "tor", "cdn", "resproxy", "dcproxy", "mobproxy",
 	}
 	if len(got) != len(want) {
@@ -196,7 +197,9 @@ func TestValidateAndExpandFields(t *testing.T) {
 	}
 
 	got := ExpandFields([]string{"is_vpn", "vpn"})
-	want := []string{"is_vpn", "vpn.provider", "vpn.last_seen", "vpn.confidence", "vpn.method"}
+	want := []string{
+		"is_vpn", "vpn.provider", "vpn.provider_name", "vpn.last_seen", "vpn.confidence", "vpn.method",
+	}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Errorf("got %v, want %v", got, want)
 	}
@@ -251,6 +254,24 @@ func TestFlagsAndObjectsFollowColumns(t *testing.T) {
 		if !seen[strings.TrimPrefix(f, "is_")] {
 			t.Errorf("%s has no detail object in Columns", f)
 		}
+	}
+}
+
+// Each detail object's provider_name sits right after its provider in CSV's
+// columns, where a reader looks for the name; TestPresentOrder pins the block.
+func TestProviderNameFollowsItsProvider(t *testing.T) {
+	names := 0
+	for i, col := range Columns {
+		obj, field, _ := strings.Cut(col, ".")
+		if field == "provider" && (i+1 == len(Columns) || Columns[i+1] != obj+".provider_name") {
+			t.Errorf("%s is not followed by %s.provider_name", col, obj)
+		}
+		if field == "provider_name" {
+			names++
+		}
+	}
+	if names != 8 {
+		t.Errorf("Columns names %d provider_name fields, want 8", names)
 	}
 }
 

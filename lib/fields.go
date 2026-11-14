@@ -16,8 +16,9 @@ import (
 // the CSV contract. A caller's column indexes must not move because the API
 // grew a field, and a new field appearing silently at the end is far easier to
 // absorb than one appearing in the middle. The readable block lists each one
-// with its object's other fields all the same. is_pubproxy is the exception:
-// 1.10.0 put it with the other flags, which moved every column after it.
+// with its object's other fields all the same. Two exceptions were chosen:
+// 1.10.0 put is_pubproxy with the other flags, and 1.13.0 put each
+// provider_name right after its provider, each moving every column after it.
 //
 // vpn.method keeps its column, always empty: no plan is answered with it since
 // 2026-10-20, and dropping it would move every column after it.
@@ -35,14 +36,14 @@ var Columns = []string{
 	"is_mobproxy",
 	"is_pubproxy",
 
-	"vpn.provider", "vpn.last_seen", "vpn.confidence", "vpn.method",
-	"hosting.provider", "hosting.confidence", "hosting.last_seen",
-	"relay.provider", "relay.confidence", "relay.last_seen",
-	"tor.provider", "tor.confidence", "tor.last_seen",
-	"cdn.provider", "cdn.confidence", "cdn.last_seen",
-	"resproxy.provider", "resproxy.first_seen", "resproxy.last_seen", "resproxy.hits",
-	"dcproxy.provider", "dcproxy.first_seen", "dcproxy.last_seen", "dcproxy.hits",
-	"mobproxy.provider", "mobproxy.first_seen", "mobproxy.last_seen", "mobproxy.hits",
+	"vpn.provider", "vpn.provider_name", "vpn.last_seen", "vpn.confidence", "vpn.method",
+	"hosting.provider", "hosting.provider_name", "hosting.confidence", "hosting.last_seen",
+	"relay.provider", "relay.provider_name", "relay.confidence", "relay.last_seen",
+	"tor.provider", "tor.provider_name", "tor.confidence", "tor.last_seen",
+	"cdn.provider", "cdn.provider_name", "cdn.confidence", "cdn.last_seen",
+	"resproxy.provider", "resproxy.provider_name", "resproxy.first_seen", "resproxy.last_seen", "resproxy.hits",
+	"dcproxy.provider", "dcproxy.provider_name", "dcproxy.first_seen", "dcproxy.last_seen", "dcproxy.hits",
+	"mobproxy.provider", "mobproxy.provider_name", "mobproxy.first_seen", "mobproxy.last_seen", "mobproxy.hits",
 
 	"resproxy.hits_days_pct", "resproxy.providers_num",
 	"dcproxy.hits_days_pct", "dcproxy.providers_num",

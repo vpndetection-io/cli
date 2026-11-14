@@ -39,10 +39,11 @@ what makes that decidable without buffering the whole input.
 
 **A field joins `lib.Columns` at its END, never beside its object's other
 fields**, because that order is the CSV header and a caller's column indexes
-must not move; the readable block lists it with its object all the same. The
-one exception was chosen, not followed: 1.10.0 put `is_pubproxy` at column 11
-with the other flags, moving every column after it, so ask again for the next
-flag rather than place it by either precedent. `TestColumnsAreTheSDKsFields`
+must not move; the readable block lists it with its object all the same. Two
+exceptions were chosen, not followed, each moving every column after it: 1.10.0
+put `is_pubproxy` at column 11 with the other flags, and 1.13.0 each
+`provider_name` right after its object's `provider`. Ask again for the next
+field rather than place it by any precedent. `TestColumnsAreTheSDKsFields`
 fails on the sdk-go bump that brings a field the list does not name, and
 `TestFlagsAndObjectsFollowColumns` when `Flags` or `Objects` misses a flag or
 object it gains, which the readable block would print apart from its family.
