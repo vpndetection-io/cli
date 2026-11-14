@@ -138,7 +138,7 @@ func cmdDatabase() error {
 func dbList(ctx context.Context, db *vpndetection.DatabaseAPI, asJSON bool) error {
 	items, err := db.List(ctx)
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	if asJSON {
 		return emitJSON(items)
@@ -200,7 +200,7 @@ func licenseTerm(d vpndetection.Database, now time.Time) string {
 func dbMetadata(ctx context.Context, db *vpndetection.DatabaseAPI, id string) error {
 	meta, err := db.Metadata(ctx, id)
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	return emitJSON(meta)
 }
@@ -208,7 +208,7 @@ func dbMetadata(ctx context.Context, db *vpndetection.DatabaseAPI, id string) er
 func dbChecksum(ctx context.Context, db *vpndetection.DatabaseAPI, id, format string, asJSON bool) error {
 	sums, err := db.Checksums(ctx, id, vpndetection.Format(format))
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	if asJSON {
 		return emitJSON(sums)
@@ -229,7 +229,7 @@ func dbChecksum(ctx context.Context, db *vpndetection.DatabaseAPI, id, format st
 func dbURL(ctx context.Context, db *vpndetection.DatabaseAPI, id, format string) error {
 	url, err := db.DownloadURL(ctx, id, vpndetection.Format(format))
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	fmt.Println(url)
 	return nil
@@ -238,7 +238,7 @@ func dbURL(ctx context.Context, db *vpndetection.DatabaseAPI, id, format string)
 func dbDownloads(ctx context.Context, db *vpndetection.DatabaseAPI, limit int, asJSON bool) error {
 	items, err := db.Downloads(ctx, limit)
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	if asJSON {
 		return emitJSON(items)
@@ -282,7 +282,7 @@ func dbDownload(
 		// buffering a multi-gigabyte file to hash it would defeat the point.
 		n, err := db.Download(ctx, id, f, os.Stdout)
 		if err != nil {
-			return explain(err)
+			return explainDatabase(err)
 		}
 		fmt.Fprintf(os.Stderr, "%s written\n", humanBytes(n))
 		return nil
@@ -303,7 +303,7 @@ func dbDownload(
 	fmt.Fprintf(os.Stderr, "downloading %s (%s) to %s...\n", id, format, out)
 	n, err := db.DownloadFile(ctx, id, f, out)
 	if err != nil {
-		return explain(err)
+		return explainDatabase(err)
 	}
 	fmt.Fprintf(os.Stderr, "%s written\n", humanBytes(n))
 
@@ -313,7 +313,7 @@ func dbDownload(
 	if sumsErr != nil {
 		// The file is on disk and intact as far as we know; failing the command
 		// over an unavailable checksum would throw away a good download.
-		fmt.Fprintf(os.Stderr, "warn: could not fetch checksums to verify: %v\n", explain(sumsErr))
+		fmt.Fprintf(os.Stderr, "warn: could not fetch checksums to verify: %v\n", explainDatabase(sumsErr))
 		return nil
 	}
 	if sums.SHA256 == "" {

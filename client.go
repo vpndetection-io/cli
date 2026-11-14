@@ -236,7 +236,9 @@ func resolveRetries() int {
 // explain turns an SDK error into something worth reading at a terminal.
 //
 // The SDK's own message is accurate and says nothing about what to DO, which
-// for the two authentication failures is the entire question.
+// for the two authentication failures is the entire question. A 403 gets no
+// hint: it refuses a valid key for an address its allowed addresses leave out
+// or for plain HTTP, and the API's message names which.
 func explain(err error) error {
 	var apiErr *vpndetection.Error
 	if !errors.As(err, &apiErr) {
@@ -245,12 +247,21 @@ func explain(err error) error {
 	switch apiErr.Kind {
 	case vpndetection.KindUnauthorized:
 		return fmt.Errorf("%w\nthe API key was not accepted; check `%s whoami`", err, progBase)
-	case vpndetection.KindForbidden:
-		return fmt.Errorf("%w\nthis key's plan or license does not cover that", err)
 	case vpndetection.KindQuotaExceeded:
 		return fmt.Errorf("%w\nsee `%s whoami` for the allowance and when it resets", err, progBase)
 	case vpndetection.KindRateLimited:
 		return fmt.Errorf("%w\nslow down, or lower --concurrency", err)
 	}
 	return err
+}
+
+// explainDatabase is explain for the database calls, whose 403 is always the
+// license: the organization holds none for that database, or its term has ended.
+func explainDatabase(err error) error {
+	var apiErr *vpndetection.Error
+	if errors.As(err, &apiErr) && apiErr.Kind == vpndetection.KindForbidden {
+		return fmt.Errorf("%w\nthis organization's license does not cover that; `%s db list` shows what it holds",
+			err, progBase)
+	}
+	return explain(err)
 }
