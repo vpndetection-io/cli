@@ -2,6 +2,16 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.13.0 - 2026-11-14
+
+### Breaking changes
+
+- Take sdk-go v5.15.0, and print each provider_name beside its provider ([`7a28655`](https://github.com/vpndetection-io/cli/commit/7a286558f21c227f6b0360c1b2c3981367cf88a7))
+
+### Fixes
+
+- Drop the plan or license hint from a lookup's 403 ([`30925bb`](https://github.com/vpndetection-io/cli/commit/30925bb5b00e3a8c6b23a149f3147660a4f6458c))
+
 ## 1.12.4 - 2026-11-13
 
 ### Fixes
