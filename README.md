@@ -261,7 +261,7 @@ from         session default
 api          https://api.vpndetection.io
 org          85bb51e4-2eb6-4a31-8e4d-02ba8b98fe61
 
-plan         max
+plan         Max
 fields       max tier
 
 used         412,908 of 5,000,000
