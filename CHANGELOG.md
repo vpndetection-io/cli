@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.13.1 - 2026-11-16
+
+### Fixes
+
+- whoami names the plan as the API serves it, on sdk-go v5.16.0 ([`4fff209`](https://github.com/vpndetection-io/cli/commit/4fff20972c9fda98bef2ad5551cc6e8e82f4e1a1))
+
 ## 1.13.0 - 2026-11-14
 
 ### Breaking changes
