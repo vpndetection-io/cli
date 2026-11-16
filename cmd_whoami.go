@@ -103,22 +103,23 @@ func cmdWhoami() error {
 		fmt.Printf("expires      %s\n", acct.Apikey.Expires.Format(time.RFC3339))
 	}
 
+	// The plan's name as the API serves it, never one built from its key: a plan can be renamed,
+	// and its key never is, which is why the key alone decides the free plan's lines.
+	fmt.Printf("\nplan         %s\n", acct.Plan.Name)
 	if acct.Plan.Key == freePlanKey {
 		// The free plan, Unlimited (2026-11-11): every lookup is answered with no cap, and the first
 		// ones each UTC day with every field, its daily trial, which is what its usage counts.
 		// Nothing refuses it.
-		fmt.Printf("\nplan         Unlimited\n")
 		fmt.Printf("every field  %s of %s lookups today\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		fmt.Printf("past them    lookups answer with Unlimited's fields until the day resets\n")
+		fmt.Printf("past them    lookups answer with %s's fields until the day resets\n", acct.Plan.Name)
 		fmt.Printf("resets       %s (%s)\n",
 			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
 		return nil
 	}
-	fmt.Printf("\nplan         %s\n", acct.Plan.Key)
 	fmt.Printf("fields       %s tier\n", acct.Plan.Tier)
 
 	fmt.Printf("\nused         %s of %s\n",
@@ -151,7 +152,8 @@ func usageBar(used, quota int64) string {
 		float64(used)/float64(quota)*100)
 }
 
-// freePlanKey is the plan an org with no subscription is on, which the site and console call Unlimited.
+// freePlanKey is the plan an org with no subscription is on, a key that never changes whatever the
+// plan is called.
 const freePlanKey = "free"
 
 // quotaText renders an allowance, naming a plan that includes none rather than

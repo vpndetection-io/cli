@@ -47,20 +47,58 @@ func TestWhoamiWithNoKey(t *testing.T) {
 	}
 }
 
-// A key on the free plan is on Unlimited: whoami names the plan so, and counts the day's lookups with
-// every field, its daily trial, from the entitlement's usage.
-func TestWhoamiOnTheFreePlan(t *testing.T) {
+// whoami names the plan as the API serves it, never from its key, which a plan keeps however it is
+// renamed: a renamed free plan keeps its daily trial lines, and a paid plan shows its name and tier.
+func TestWhoamiNamesThePlanAsServed(t *testing.T) {
+	for _, c := range []struct {
+		plan    string
+		want    []string
+		notWant string
+	}{
+		{
+			`{"key":"free","name":"Unlimited","tier":"free"}`,
+			[]string{"plan         Unlimited\n", "every field  37 of 100 lookups today\n",
+				"past them    lookups answer with Unlimited's fields until the day resets\n"},
+			"\nfields ",
+		},
+		{
+			`{"key":"free","name":"Open","tier":"free"}`,
+			[]string{"plan         Open\n", "every field  37 of 100 lookups today\n",
+				"past them    lookups answer with Open's fields until the day resets\n"},
+			"Unlimited",
+		},
+		{
+			`{"key":"data","name":"Data Pro","tier":"max"}`,
+			[]string{"plan         Data Pro\n", "fields       max tier\n", "used         37 of 100\n"},
+			"plan         data",
+		},
+	} {
+		out := whoamiAgainst(t, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab",`+
+			`"apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def",`+
+			`"expires":null,"allowed_cidrs":[]},`+
+			`"plan":`+c.plan+`,"usage":{"requests":37,"quota":100,"hard_limit":null,`+
+			`"window_start":"2026-11-11T00:00:00Z","window_end":"2099-11-12T00:00:00Z"}}`)
+		for _, want := range c.want {
+			if !strings.Contains(out, want) {
+				t.Errorf("plan %s: missing %q:\n%s", c.plan, want, out)
+			}
+		}
+		if strings.Contains(out, c.notWant) {
+			t.Errorf("plan %s: printed %q:\n%s", c.plan, c.notWant, out)
+		}
+	}
+}
+
+// whoamiAgainst runs the readable whoami against an API serving answer as the entitlement.
+func whoamiAgainst(t *testing.T, answer string) string {
+	t.Helper()
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/v1/entitlement" {
 			http.NotFound(w, r)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab",`+
-			`"apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def",`+
-			`"expires":null,"allowed_cidrs":[]},`+
-			`"plan":{"key":"free","tier":"free"},"usage":{"requests":37,"quota":100,"hard_limit":null,`+
-			`"window_start":"2026-11-11T00:00:00Z","window_end":"2099-11-12T00:00:00Z"}}`)
+		_, _ = io.WriteString(w, answer)
 	}))
 	t.Cleanup(api.Close)
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -74,13 +112,12 @@ func TestWhoamiOnTheFreePlan(t *testing.T) {
 	gConfig = NewConfig()
 
 	file, err := captureStdout(t, cmdWhoami)
-	out, readErr := io.ReadAll(file)
-	if readErr != nil {
-		t.Fatal(readErr)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, want := range []string{"plan         Unlimited\n", "every field  37 of 100 lookups today\n"} {
-		if err != nil || !strings.Contains(string(out), want) {
-			t.Errorf("missing %q (err %v):\n%s", want, err, out)
-		}
+	out, err := io.ReadAll(file)
+	if err != nil {
+		t.Fatal(err)
 	}
+	return string(out)
 }
