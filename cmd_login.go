@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/spf13/pflag"
+	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 	"golang.org/x/term"
 )
 
@@ -178,8 +180,32 @@ func checkKey(key, baseURL string) error {
 	defer cancel()
 	// A public address, so the answer exercises the key rather than the bogon
 	// short-circuit, which never reaches the network and so proves nothing.
-	if _, err := client.api.Lookup(ctx, "1.1.1.1"); err != nil {
-		return fmt.Errorf("the key was not accepted: %w\n(use --no-check to store it anyway)", explain(err))
+	_, err = client.api.Lookup(ctx, "1.1.1.1")
+	if err == nil {
+		return nil
 	}
-	return nil
+	if downloadsOnly(ctx, client, err) {
+		fmt.Fprintf(os.Stderr, "warn: this key downloads databases but cannot look up: %v\n", err)
+		return nil
+	}
+	return fmt.Errorf("the key was not accepted: %w\n(use --no-check to store it anyway)", explain(err))
+}
+
+// downloadsOnly reports whether a key the lookup refused as forbidden still
+// lists the databases, as one holding db.download but not ip.lookup does. The
+// listing refuses a key for its address too, but over plain HTTP its host
+// redirects to HTTPS and answers, so only an HTTPS base URL asks it.
+func downloadsOnly(ctx context.Context, client *Client, lookupErr error) bool {
+	var apiErr *vpndetection.Error
+	if !errors.As(lookupErr, &apiErr) || apiErr.Kind != vpndetection.KindForbidden {
+		return false
+	}
+	if base := gConfig.ResolveBaseURL(); base != "" {
+		parsed, err := url.Parse(base)
+		if err != nil || parsed.Scheme != "https" {
+			return false
+		}
+	}
+	_, err := client.Database().List(ctx)
+	return err == nil
 }
