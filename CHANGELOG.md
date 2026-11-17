@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.13.2 - 2026-11-17
+
+### Fixes
+
+- login stores a key that downloads databases but cannot look up ([`bcb2b4b`](https://github.com/vpndetection-io/cli/commit/bcb2b4b160608624ef7d45f71b6c2e58ae8be7ba))
+
 ## 1.13.1 - 2026-11-16
 
 ### Fixes
