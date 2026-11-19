@@ -255,11 +255,13 @@ func explain(err error) error {
 	return err
 }
 
-// explainDatabase is explain for the database calls, whose 403 is always the
-// license: the organization holds none for that database, or its term has ended.
+// explainDatabase is explain for the database calls, whose 403 is the license
+// when its code says so: the organization holds none for that database, or its
+// term has ended. The other, KEY_OVER_HTTP, names its own remedy.
 func explainDatabase(err error) error {
 	var apiErr *vpndetection.Error
-	if errors.As(err, &apiErr) && apiErr.Kind == vpndetection.KindForbidden {
+	if errors.As(err, &apiErr) && apiErr.Kind == vpndetection.KindForbidden &&
+		(apiErr.Message == "NOT_LICENSED" || apiErr.Message == "LICENSE_EXPIRED") {
 		return fmt.Errorf("%w\nthis organization's license does not cover that; `%s db list` shows what it holds",
 			err, progBase)
 	}

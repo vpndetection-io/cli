@@ -27,8 +27,8 @@ func TestExplainLeavesALookup403ToTheAPI(t *testing.T) {
 	}
 }
 
-// A database call's 403 is the organization's license, never the key, so it
-// keeps a hint saying where to see what the organization holds.
+// A database call's license 403 keeps a hint saying where to see what the
+// organization holds.
 func TestExplainDatabaseNamesTheLicenseOnA403(t *testing.T) {
 	for _, rc := range []string{"NOT_LICENSED", "LICENSE_EXPIRED"} {
 		err := &vpndetection.Error{Kind: vpndetection.KindForbidden, Message: rc, StatusCode: 403}
@@ -37,6 +37,15 @@ func TestExplainDatabaseNamesTheLicenseOnA403(t *testing.T) {
 		if got := explainDatabase(err).Error(); got != want {
 			t.Errorf("explainDatabase(%q) = %q, want %q", rc, got, want)
 		}
+	}
+}
+
+// A database call over plain HTTP is a 403 too, and naming the license there
+// sent the caller to `db list`, which is refused the same way.
+func TestExplainDatabaseLeavesANonLicense403ToTheAPI(t *testing.T) {
+	err := &vpndetection.Error{Kind: vpndetection.KindForbidden, Message: "KEY_OVER_HTTP", StatusCode: 403}
+	if got := explainDatabase(err).Error(); got != err.Error() {
+		t.Errorf("explainDatabase(KEY_OVER_HTTP) = %q, want the SDK's error alone", got)
 	}
 }
 
