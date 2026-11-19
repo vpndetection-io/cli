@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.13.3 - 2026-11-19
+
+### Fixes
+
+- Drop the license hint from a database call's plain-HTTP 403 ([`d7ac0e1`](https://github.com/vpndetection-io/cli/commit/d7ac0e1f690370d9a556c7cd2c4d97c1343c7e79))
+
 ## 1.13.2 - 2026-11-17
 
 ### Fixes
