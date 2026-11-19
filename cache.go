@@ -130,7 +130,7 @@ func (c *Cache) Get(ip string) *vpndetection.Result {
 	return found.Result
 }
 
-// PutBatch stores many answers in one transaction.
+// PutBatch stores many answers in one transaction, skipping a reduced one.
 //
 // Errors are swallowed by design. A full disk or a read-only home directory
 // should not fail a lookup that already succeeded.
@@ -149,7 +149,7 @@ func (c *Cache) PutBatch(results map[string]*vpndetection.Result) {
 			return nil
 		}
 		for ip, result := range results {
-			if result == nil {
+			if result == nil || reduced(result) {
 				continue
 			}
 			raw, err := json.Marshal(entry{Created: now, Result: result})
@@ -162,6 +162,13 @@ func (c *Cache) PutBatch(results map[string]*vpndetection.Result) {
 		}
 		return nil
 	})
+}
+
+// reduced reports an answer cut to Unlimited's fields past the day's trial or
+// the overage cap. It is unbilled, so caching it saves nothing, and a cached one
+// would outlive the trial's reset or a raised cap.
+func reduced(r *vpndetection.Result) bool {
+	return vpndetection.BoolValue(r.TrialExpired) || vpndetection.BoolValue(r.CapReached)
 }
 
 // CacheStats is what `cache info` reports.

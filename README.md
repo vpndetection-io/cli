@@ -346,7 +346,7 @@ On a key with no paid plan, each answer carries `trial_expired`: `false` for the
 
 ## Caching
 
-Answers are cached on disk, so looking the same address up twice costs one request rather than two.
+Answers are cached on disk, so looking the same address up twice costs one request rather than two. An answer with `trial_expired` or `cap_reached` set to `true` isn't cached, so once the trial resets or your cap is raised the next lookup gets every field.
 
 ```bash
 vpndetection cache info

@@ -144,3 +144,41 @@ func TestCacheForgetsAnExpiredAnswer(t *testing.T) {
 		t.Error("an answer past its TTL was served")
 	}
 }
+
+// An answer cut to Unlimited's fields past the day's trial or the overage cap is
+// not cached, so the lookup after the trial resets or the cap is raised asks
+// again and gets every field.
+func TestCacheSkipsAnAnswerReducedByTheTrialOrTheCap(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	yes, no := true, false
+	answers := []struct {
+		ip           string
+		trialExpired *bool
+		capReached   *bool
+		cached       bool
+	}{
+		{"45.83.91.1", &yes, nil, false},
+		{"45.83.91.2", nil, &yes, false},
+		{"45.83.91.3", &no, nil, true},
+		{"45.83.91.4", nil, &no, true},
+		{"45.83.91.5", nil, nil, true},
+	}
+
+	cache, err := OpenCache("k", "", time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cache.Close()
+	batch := make(map[string]*vpndetection.Result, len(answers))
+	for _, a := range answers {
+		batch[a.ip] = &vpndetection.Result{LookupResponse: vpndetection.LookupResponse{
+			IP: a.ip, TrialExpired: a.trialExpired, CapReached: a.capReached,
+		}}
+	}
+	cache.PutBatch(batch)
+	for _, a := range answers {
+		if got := cache.Get(a.ip) != nil; got != a.cached {
+			t.Errorf("%s: cached is %v, want %v", a.ip, got, a.cached)
+		}
+	}
+}
