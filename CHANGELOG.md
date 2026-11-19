@@ -2,6 +2,16 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.14.0 - 2026-11-19
+
+### Features
+
+- Take sdk-go v5.17.1: cap_reached, the last CSV column ([`d621aed`](https://github.com/vpndetection-io/cli/commit/d621aedc60cafb4311f13ae4882ef26ee1bb00cf))
+
+### Fixes
+
+- Don't cache an answer reduced past the trial or the cap ([`a1effe6`](https://github.com/vpndetection-io/cli/commit/a1effe621919e56375f2f1e61ad9bc548e26c68c))
+
 ## 1.13.3 - 2026-11-19
 
 ### Fixes
