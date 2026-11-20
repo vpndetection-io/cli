@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.15.0 - 2026-11-20
+
+### Features
+
+- Take sdk-go v5.18.0: services, carrier, satellite, city, company and abuse ([`b4e1957`](https://github.com/vpndetection-io/cli/commit/b4e19572baea128acd07f202f0e5f02fd2279521))
+
 ## 1.14.1 - 2026-11-20
 
 ### Fixes
