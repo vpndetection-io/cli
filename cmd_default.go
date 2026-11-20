@@ -27,7 +27,7 @@ Description:
   It works with no account at all: a lookup answers whether the address is a
   VPN, a Tor node or a relay, with its location and asn, with no daily cap.
   Every paid plan answers every field and looks addresses up in batches, and a
-  new account can try every field, 100 lookups a day.
+  new account can try every field.
 
 Examples:
   # One address.

@@ -48,7 +48,7 @@ Description:
   You do not need an account to use this tool: Unlimited, the free plan, with a
   key or without one, answers whether an address is a VPN, a Tor node or a
   relay, where it is and its AS, with no cap. A free account also tries every
-  field, 100 lookups a day, and a paid plan answers them all.
+  field, and a paid plan answers them all.
 
 Options:
   --no-browser
