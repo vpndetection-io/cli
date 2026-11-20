@@ -2,6 +2,7 @@ package lib
 
 import (
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -110,28 +111,35 @@ func TestPresentOrder(t *testing.T) {
 	}
 }
 
-// freeKeyAnswer is what a free key serves since 2026-10-20: Tor and relay beside
-// the VPN flag, and the location and AS, each carrying every member.
+// freeKeyAnswer is what Unlimited serves since 2026-11-20: Tor, relay and anycast
+// beside the VPN flag, the location and AS, and the hostname, empty where the
+// address has none.
 const freeKeyAnswer = `{
-  "ip":"146.70.116.130","is_vpn":true,"is_relay":false,"is_tor":false,"relay":{},"tor":{},
+  "ip":"146.70.116.130","is_vpn":true,"is_relay":false,"is_tor":false,"is_anycast":false,
+  "relay":{},"tor":{},
   "location":{"continent":"EU","continent_name":"Europe","country":"AT","country_name":"Austria",
     "timezone":"Europe/Vienna","currency_code":"EUR","currency_name":"Euro","currency_symbol":"€",
     "flag_emoji":"🇦🇹","flag_unicode":"U+1F1E6 U+1F1F9"},
   "asn":{"asn":9009,"name":"M247 Europe SRL","domain":"m247global.com","type":"hosting",
-    "prefix":"146.70.116.0/24"},
+    "prefix":"146.70.116.0/24","country":"RO","rpki_status":"not_found"},
+  "hostname":"",
   "is_bogon":false
 }`
 
 // The location and the AS print after the detail objects, each with its own
-// fields in Columns' order.
+// fields in Columns' order, its members from 1.15.0 among them.
 func TestPresentListsLocationAndAsnAfterTheDetails(t *testing.T) {
-	got := flattenJSON(t, freeKeyAnswer).Present()
-	want := []string{"ip", "is_bogon", "is_vpn", "is_relay", "is_tor", "relay", "tor"}
-	for _, col := range Columns {
-		if strings.HasPrefix(col, "location.") || strings.HasPrefix(col, "asn.") {
-			want = append(want, col)
+	rec := flattenJSON(t, freeKeyAnswer)
+	got := rec.Present()
+	want := []string{"ip", "is_bogon", "is_vpn", "is_relay", "is_tor", "is_anycast", "relay", "tor"}
+	for _, obj := range []string{"location.", "asn."} {
+		for _, col := range Columns {
+			if strings.HasPrefix(col, obj) && rec[col].Present {
+				want = append(want, col)
+			}
 		}
 	}
+	want = append(want, "hostname")
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v\nwant %v", got, want)
 	}
@@ -247,12 +255,29 @@ func TestFlagsAndObjectsFollowColumns(t *testing.T) {
 	if !reflect.DeepEqual(Flags, flags) {
 		t.Errorf("Flags = %v, want the flags Columns names, in its order: %v", Flags, flags)
 	}
-	if !reflect.DeepEqual(Objects, objects) {
-		t.Errorf("Objects = %v, want the objects Columns names, in its order: %v", Objects, objects)
-	}
+	// Each flag's detail object in Flags' order, then the objects no flag owns,
+	// in Columns' order, since a field joins Columns at its end.
+	var want []string
+	owned := map[string]bool{}
 	for _, f := range Flags {
-		if !seen[strings.TrimPrefix(f, "is_")] {
-			t.Errorf("%s has no detail object in Columns", f)
+		if detail := strings.TrimPrefix(f, "is_"); seen[detail] {
+			want = append(want, detail)
+			owned[detail] = true
+		}
+	}
+	for _, obj := range objects {
+		if !owned[obj] {
+			want = append(want, obj)
+		}
+	}
+	if !reflect.DeepEqual(Objects, want) {
+		t.Errorf("Objects = %v, want each flag's detail in Flags' order, then the rest: %v", Objects, want)
+	}
+	// Web IP's detail is a list, one column, and Anycast IP has none.
+	for _, f := range Flags {
+		detail := strings.TrimPrefix(f, "is_")
+		if !seen[detail] && !slices.Contains(Columns, detail) && f != "is_anycast" {
+			t.Errorf("%s has no detail in Columns", f)
 		}
 	}
 }
@@ -270,8 +295,8 @@ func TestProviderNameFollowsItsProvider(t *testing.T) {
 			names++
 		}
 	}
-	if names != 8 {
-		t.Errorf("Columns names %d provider_name fields, want 8", names)
+	if names != 9 {
+		t.Errorf("Columns names %d provider_name fields, want 9", names)
 	}
 }
 

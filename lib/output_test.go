@@ -75,18 +75,21 @@ func TestCSVHeaderIsFixed(t *testing.T) {
 	}
 }
 
-// trial_expired and cap_reached came last, so no column moved, and the readable
-// block prints each after the answer's fields, where a user reads whether the
-// answer is Unlimited's: a trial key's because the day's full lookups are spent,
-// a paid key's because its organization's overage cap is reached. An answer
-// carries at most one of the two, so prints at most one.
+// trial_expired and cap_reached keep the columns 1.14.0 gave them, the last
+// then, so no column moves, and the readable block prints each after the
+// answer's fields, hostname and web included, where a user reads whether the
+// answer is Unlimited's: a trial key's because the trial is spent, a paid key's
+// because its organization's overage cap is reached. An answer carries at most
+// one of the two, so prints at most one.
 func TestPlanStateComesLast(t *testing.T) {
 	const (
 		spent  = `{"ip":"1.1.1.1","is_vpn":true,"is_bogon":false,"trial_expired":true}`
-		capped = `{"ip":"2.2.2.2","is_vpn":true,"is_bogon":false,"cap_reached":true}`
+		capped = `{"ip":"2.2.2.2","is_vpn":true,"is_bogon":false,"cap_reached":true,` +
+			`"is_web":false,"web":[],"hostname":"host.example.net"}`
 	)
-	if tail := strings.Join(Columns[len(Columns)-2:], ","); tail != "trial_expired,cap_reached" {
-		t.Fatalf("the last columns are %s", tail)
+	const trial, capCol = 75, 76
+	if Columns[trial] != "trial_expired" || Columns[capCol] != "cap_reached" {
+		t.Fatalf("columns %d and %d are %s and %s", trial, capCol, Columns[trial], Columns[capCol])
 	}
 	for _, c := range []struct{ answer, field string }{{spent, "trial_expired"}, {capped, "cap_reached"}} {
 		lines := strings.Split(strings.TrimSpace(render(t, FormatPretty, Opts{}, c.answer)), "\n")
@@ -99,10 +102,12 @@ func TestPlanStateComesLast(t *testing.T) {
 		t.Errorf("a paid answer printed trial_expired:\n%s", got)
 	}
 	rows := strings.Split(strings.TrimSpace(render(t, FormatCSV, Opts{}, spent, capped, maxAnswer)), "\n")
-	if !strings.HasSuffix(rows[1], ",true,") || !strings.HasSuffix(rows[2], ",,true") ||
-		!strings.HasSuffix(rows[3], ",,") {
-		t.Errorf("the trial row ends %q, the capped one %q and the paid one %q",
-			rows[1][len(rows[1])-6:], rows[2][len(rows[2])-6:], rows[3][len(rows[3])-6:])
+	want := [][2]string{{"true", ""}, {"", "true"}, {"", ""}}
+	for i, w := range want {
+		cells := strings.Split(rows[i+1], ",")
+		if got := [2]string{cells[trial], cells[capCol]}; got != w {
+			t.Errorf("row %d has trial_expired %q and cap_reached %q, want %q", i+1, got[0], got[1], w)
+		}
 	}
 }
 

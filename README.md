@@ -9,7 +9,7 @@ Look up what an IP address is - a VPN exit, a hosting or CDN range, a Tor node, 
 
 ## Getting Started
 
-No account is needed to start: Unlimited, the free plan, answers any address with no cap, with a key or without one: whether it is a VPN, a Tor node or a relay, where it is and the AS that announces it, one address per request. Every paid plan answers all our data fields and looks addresses up in batches of up to 1,000, and a free account tries every field.
+No account is needed to start: Unlimited, the free plan, answers any address with no cap, with a key or without one: whether it is a VPN, a Tor node, a relay or anycast, where it is, the AS that announces it and its hostname, one address per request. Every paid plan answers all our data fields and looks addresses up in batches of up to 1,000, and a free account tries every field.
 
 ### macOS
 
@@ -339,6 +339,8 @@ Note that as long as the `COMP_LINE` environment variable is provided to the bin
 ## Data
 
 How much you get back per lookup depends on the plan behind your key. See the [plans](https://vpndetection.io/pricing) for what each includes. All examples in this document use a key with everything enabled.
+
+A paid plan also says whether the address is a mobile carrier's or a satellite link's and whether it runs SSH, SMTP, a web server, an open DNS resolver or BitTorrent, each with its detail, plus its city, the company using it and its abuse contact. In CSV these columns come after `cap_reached`, so no earlier column moves, and `web` is one column holding its list as JSON.
 
 **A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
 

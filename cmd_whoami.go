@@ -67,7 +67,8 @@ func cmdWhoami() error {
 			return fmt.Errorf("not authenticated; run `%s login`, or set VPNDETECTION_API_KEY", progBase)
 		}
 		fmt.Println("not authenticated")
-		fmt.Printf("\nLookups still work: they answer VPN, Tor, relay, location and asn with no daily cap.\n")
+		fmt.Println("\nLookups still work: they answer VPN, Tor, relay, anycast, location, asn and hostname,",
+			"with no daily cap.")
 		fmt.Printf("Run `%s login` to use a key, or `%s signup` to create an account.\n", progBase, progBase)
 		return nil
 	}

@@ -46,9 +46,9 @@ Description:
   If no browser opens, both URLs are printed.
 
   You do not need an account to use this tool: Unlimited, the free plan, with a
-  key or without one, answers whether an address is a VPN, a Tor node or a
-  relay, where it is and its AS, with no cap. A free account also tries every
-  field, and a paid plan answers them all.
+  key or without one, answers whether an address is a VPN, a Tor node, a relay
+  or anycast, where it is, its AS and its hostname, with no cap. A free account
+  also tries every field, and a paid plan answers them all.
 
 Options:
   --no-browser

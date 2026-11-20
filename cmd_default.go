@@ -25,9 +25,9 @@ Description:
   place of an answer, and the command then exits 1.
 
   It works with no account at all: a lookup answers whether the address is a
-  VPN, a Tor node or a relay, with its location and asn, with no daily cap.
-  Every paid plan answers every field and looks addresses up in batches, and a
-  new account can try every field.
+  VPN, a Tor node, a relay or anycast, with its location, asn and hostname,
+  with no daily cap. Every paid plan answers every field and looks addresses up
+  in batches, and a new account can try every field.
 
 Examples:
   # One address.

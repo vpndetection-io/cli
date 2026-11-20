@@ -64,6 +64,30 @@ var Columns = []string{
 	// On a paid key's answers alone: false while the answer has every field, true
 	// once its organization's overage cap is reached and the answer is Unlimited's.
 	"cap_reached",
+
+	// The services, carrier and satellite flags, each detail, and who uses and
+	// answers for the address, from 1.15.0. web is one column holding its list.
+	"is_anycast", "is_carrier", "is_satellite", "is_ssh", "is_smtp", "is_web", "is_dns_resolver",
+	"is_bittorrent",
+	"carrier.name", "carrier.mcc", "carrier.mnc", "carrier.country", "carrier.confidence",
+	"satellite.provider", "satellite.provider_name", "satellite.orbit", "satellite.segment",
+	"satellite.country", "satellite.asn", "satellite.confidence",
+	"ssh.port", "ssh.banner", "ssh.host_key_fp", "ssh.session_ok", "ssh.first_seen", "ssh.last_seen",
+	"smtp.port", "smtp.banner", "smtp.session_ok", "smtp.first_seen", "smtp.last_seen",
+	"web",
+	"dns_resolver.port", "dns_resolver.recursion_available", "dns_resolver.rcode",
+	"dns_resolver.answer_correct", "dns_resolver.first_seen", "dns_resolver.last_seen",
+	"bittorrent.verified", "bittorrent.id_matches_ip", "bittorrent.first_seen", "bittorrent.last_seen",
+	"bittorrent.last_reachable", "bittorrent.days_seen", "bittorrent.num_ports",
+	"bittorrent.peak_num_ports", "bittorrent.indexer", "bittorrent.clients",
+	"location.region", "location.region_code", "location.city", "location.postal_code",
+	"location.latitude", "location.longitude", "location.accuracy_radius", "location.geoname_id",
+	"location.dma_code", "location.last_changed",
+	"asn.country", "asn.rpki_status",
+	"company.name", "company.domain", "company.type", "company.country",
+	"hostname",
+	"abuse.email", "abuse.name", "abuse.phone", "abuse.address", "abuse.country", "abuse.network",
+	"abuse.validated", "abuse.unvalidated_since",
 }
 
 // retired are columns no answer carries any more, kept so no CSV column moves.
@@ -75,6 +99,8 @@ var retired = map[string]bool{"vpn.method": true}
 var Flags = []string{
 	"is_vpn", "is_hosting", "is_relay", "is_tor",
 	"is_cdn", "is_resproxy", "is_dcproxy", "is_mobproxy", "is_pubproxy",
+	"is_anycast", "is_carrier", "is_satellite", "is_ssh", "is_smtp", "is_web", "is_dns_resolver",
+	"is_bittorrent",
 }
 
 // Cell is one field of one answer.
@@ -179,12 +205,13 @@ func scalar(v any) string {
 // Get reads one dotted field.
 func (r Record) Get(field string) Cell { return r[field] }
 
-// Objects are the detail objects, in the order output presents them. Each one
-// belongs to the flag of the same name, but for location and asn, which every
-// keyed answer carries whole.
+// Objects are the detail objects, in the order output presents them: each
+// flag's, in Flags' order, then the location and the AS, which every answer
+// carries whole, and the company and abuse contact.
 var Objects = []string{
 	"vpn", "hosting", "relay", "tor", "cdn", "resproxy", "dcproxy", "mobproxy",
-	"pubproxy", "location", "asn",
+	"pubproxy", "carrier", "satellite", "ssh", "smtp", "dns_resolver", "bittorrent",
+	"location", "asn", "company", "abuse",
 }
 
 // Present lists the fields this answer actually carries, in display order:
@@ -249,12 +276,16 @@ func (r Record) listed(absent bool) []string {
 			}
 		}
 	}
-	// A top-level field that is neither a flag nor an object, as trial_expired.
+	// A top-level field that is neither a flag nor an object, as hostname, and
+	// last trial_expired and cap_reached, which say what the answer is rather
+	// than what the address is.
 	for _, col := range Columns {
-		if !strings.Contains(col, ".") {
+		if !strings.Contains(col, ".") && col != "trial_expired" && col != "cap_reached" {
 			emit(col)
 		}
 	}
+	emit("trial_expired")
+	emit("cap_reached")
 	// A field the API grew since this build must still be printed, or the CLI
 	// silently hides what the customer is paying for.
 	extra := make([]string, 0)
