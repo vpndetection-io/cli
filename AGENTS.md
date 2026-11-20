@@ -47,6 +47,10 @@ field rather than place it by any precedent. `TestColumnsAreTheSDKsFields`
 fails on the sdk-go bump that brings a field the list does not name, and
 `TestFlagsAndObjectsFollowColumns` when `Flags` or `Objects` misses a flag or
 object it gains, which the readable block would print apart from its family.
+Since 1.15.0 the readable order is no longer Columns': `Objects` holds each
+flag's detail in `Flags`' order, then location, asn, company and abuse, and the
+block ends with `trial_expired` or `cap_reached`, though their columns, 75 and
+76, are not the last.
 
 **The subcommand is found by scanning, not by `os.Args[1]`.** `vpndetection
 --session work db list` is natural to type, and reading the second argument
