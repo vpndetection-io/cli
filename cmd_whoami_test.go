@@ -89,6 +89,24 @@ func TestWhoamiNamesThePlanAsServed(t *testing.T) {
 	}
 }
 
+// A paid key's hard limit, its quota while overage is off or the overage cap, says what a lookup
+// past it gets; with no limit, requests past the quota are billed as overage.
+func TestWhoamiSaysWhatHappensPastTheHardLimit(t *testing.T) {
+	for _, c := range []struct{ limit, want, notWant string }{
+		{"100", "hard limit   100\npast it      lookups answer with Unlimited's fields, unbilled, " +
+			"until usage resets\n", "billed as overage"},
+		{"null", "hard limit   none; requests above the quota are billed as overage\n", "past it"},
+	} {
+		out := whoamiAgainst(t, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab",`+
+			`"apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def","expires":null,"allowed_cidrs":[]},`+
+			`"plan":{"key":"max","name":"Max","tier":"max"},"usage":{"requests":37,"quota":100,`+
+			`"hard_limit":`+c.limit+`,"window_start":"2026-11-11T00:00:00Z","window_end":"2099-11-12T00:00:00Z"}}`)
+		if !strings.Contains(out, c.want) || strings.Contains(out, c.notWant) {
+			t.Errorf("hard_limit %s: want %q and no %q:\n%s", c.limit, c.want, c.notWant, out)
+		}
+	}
+}
+
 // whoamiAgainst runs the readable whoami against an API serving answer as the entitlement.
 func whoamiAgainst(t *testing.T, answer string) string {
 	t.Helper()

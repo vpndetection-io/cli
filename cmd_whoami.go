@@ -132,7 +132,10 @@ func cmdWhoami() error {
 	if acct.Usage.HardLimit == nil {
 		fmt.Printf("hard limit   none; requests above the quota are billed as overage\n")
 	} else {
+		// The quota while overage is off, the default, or the overage cap set in Billing: past
+		// either, a lookup is answered with Unlimited's fields and cap_reached, and not billed.
 		fmt.Printf("hard limit   %s\n", humanCount(*acct.Usage.HardLimit))
+		fmt.Printf("past it      lookups answer with Unlimited's fields, unbilled, until usage resets\n")
 	}
 	fmt.Printf("resets       %s (%s)\n",
 		acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
