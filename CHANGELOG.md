@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.15.1 - 2026-11-20
+
+### Fixes
+
+- whoami says what a paid key's lookups get past its hard limit ([`28552e5`](https://github.com/vpndetection-io/cli/commit/28552e5d423141499e26791404ac059be6d24481))
+
 ## 1.15.0 - 2026-11-20
 
 ### Features
