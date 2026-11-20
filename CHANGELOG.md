@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.14.1 - 2026-11-20
+
+### Fixes
+
+- Help and README: the free trial without a count ([`266093f`](https://github.com/vpndetection-io/cli/commit/266093f622b80a2a62f07ed34956699c5e9826c6))
+
 ## 1.14.0 - 2026-11-19
 
 ### Features
