@@ -37,6 +37,12 @@ file's header line, but a misspelled file argument then looked up the rest and e
 prints JSON. The writer is opened only once the first chunk is in hand, which is
 what makes that decidable without buffering the whole input.
 
+**An unanswered address's error goes where its format has room.** JSON, JSON
+Lines and YAML carry `{"error": ...}` in place of the answer and the readable
+block prints it under the address; CSV, whose header an `error` column would
+change, keeps a row of the address alone and writes `err: <ip>: <error>` to
+`Opts.Errors`, standard error (1.15.2: until then nothing printed it).
+
 **A field joins `lib.Columns` at its END, never beside its object's other
 fields**, because that order is the CSV header and a caller's column indexes
 must not move; the readable block lists it with its object all the same. Two
@@ -50,13 +56,13 @@ object it gains, which the readable block would print apart from its family.
 Since 1.15.0 the readable order is no longer Columns': `Objects` holds each
 flag's detail in `Flags`' order, then location, asn, company and abuse, and the
 block ends with `trial_expired` or `cap_reached`, though their columns, 75 and
-76, are not the last.
+76, are not the last. A field the API stopped serving keeps its column too, and
+`retired` (`vpn.method`) keeps it out of the readable block unless an answer
+carries it or `-f` names it alone: `--show-absent` and `-f vpn` skip it (1.15.2).
 
-**The subcommand is found by scanning, not by `os.Args[1]`.** `vpndetection
---session work db list` is natural to type, and reading the second argument
-literally makes it a lookup of the address `--session`. `commandArg` skips the
-value of each value-taking flag, so a session named `database` is not mistaken
-for the command.
+**The subcommand is found by scanning, not by `os.Args[1]`**, which reads
+`vpndetection --session work db list` as a lookup of `--session`. `commandArg`
+skips each value-taking flag's value, so a session named `database` is no command.
 
 **Every SDK client is built with `namedHTTPClient()`**, which puts
 `vpndetection-cli/<version>` ahead of the SDK's `vpndetection-go/<version>` in
