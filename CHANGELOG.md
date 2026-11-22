@@ -2,6 +2,14 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.15.2 - 2026-11-22
+
+### Fixes
+
+- whoami names no period for the free plan's trial ([`802b5d4`](https://github.com/vpndetection-io/cli/commit/802b5d411a9597a7136d39dc71d0374f7665c8c6))
+- -f vpn leaves the retired vpn.method out of the readable block ([`ed9409f`](https://github.com/vpndetection-io/cli/commit/ed9409f64583a22b2dd80c72339620e89a9282da))
+- --csv prints each unanswered address's error to standard error ([`5133a4b`](https://github.com/vpndetection-io/cli/commit/5133a4b19e7cc3ca87a6dfbc08de8310726cc1ab))
+
 ## 1.15.1 - 2026-11-20
 
 ### Fixes
