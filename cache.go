@@ -164,7 +164,7 @@ func (c *Cache) PutBatch(results map[string]*vpndetection.Result) {
 	})
 }
 
-// reduced reports an answer cut to Unlimited's fields past the day's trial or
+// reduced reports an answer cut to Unlimited's fields past the free trial or
 // the overage cap. It is unbilled, so caching it saves nothing, and a cached one
 // would outlive the trial's reset or a raised cap.
 func reduced(r *vpndetection.Result) bool {

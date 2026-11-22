@@ -108,15 +108,14 @@ func cmdWhoami() error {
 	// and its key never is, which is why the key alone decides the free plan's lines.
 	fmt.Printf("\nplan         %s\n", acct.Plan.Name)
 	if acct.Plan.Key == freePlanKey {
-		// The free plan, Unlimited (2026-11-11): every lookup is answered with no cap, and the first
-		// ones each UTC day with every field, its daily trial, which is what its usage counts.
-		// Nothing refuses it.
-		fmt.Printf("every field  %s of %s lookups today\n",
+		// The free plan, Unlimited: every lookup is answered with no cap, and the first ones in each
+		// usage window (the entitlement's, a UTC month) with every field, its trial. Nothing refuses it.
+		fmt.Printf("every field  %s of %s lookups\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		fmt.Printf("past them    lookups answer with %s's fields until the day resets\n", acct.Plan.Name)
+		fmt.Printf("past them    lookups answer with %s's fields until the trial resets\n", acct.Plan.Name)
 		fmt.Printf("resets       %s (%s)\n",
 			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
 		return nil

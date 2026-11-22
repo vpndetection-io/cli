@@ -48,7 +48,7 @@ func TestWhoamiWithNoKey(t *testing.T) {
 }
 
 // whoami names the plan as the API serves it, never from its key, which a plan keeps however it is
-// renamed: a renamed free plan keeps its daily trial lines, and a paid plan shows its name and tier.
+// renamed: a renamed free plan keeps its trial lines, and a paid plan shows its name and tier.
 func TestWhoamiNamesThePlanAsServed(t *testing.T) {
 	for _, c := range []struct {
 		plan    string
@@ -57,14 +57,14 @@ func TestWhoamiNamesThePlanAsServed(t *testing.T) {
 	}{
 		{
 			`{"key":"free","name":"Unlimited","tier":"free"}`,
-			[]string{"plan         Unlimited\n", "every field  37 of 100 lookups today\n",
-				"past them    lookups answer with Unlimited's fields until the day resets\n"},
+			[]string{"plan         Unlimited\n", "every field  37 of 100 lookups\n",
+				"past them    lookups answer with Unlimited's fields until the trial resets\n"},
 			"\nfields ",
 		},
 		{
 			`{"key":"free","name":"Open","tier":"free"}`,
-			[]string{"plan         Open\n", "every field  37 of 100 lookups today\n",
-				"past them    lookups answer with Open's fields until the day resets\n"},
+			[]string{"plan         Open\n", "every field  37 of 100 lookups\n",
+				"past them    lookups answer with Open's fields until the trial resets\n"},
 			"Unlimited",
 		},
 		{
