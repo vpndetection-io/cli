@@ -428,6 +428,24 @@ func TestPrettyKeepsEachObjectTogether(t *testing.T) {
 	}
 }
 
+// Naming the vpn object prints no vpn.method, which keeps its CSV column though no answer carries
+// it, as --show-absent leaves it out; naming it alone still prints it, and CSV keeps the column.
+func TestFieldLeavesARetiredFieldOutOfItsObject(t *testing.T) {
+	answer := `{"ip":"146.70.116.130","is_vpn":true,"vpn":{"provider":"mullvad","provider_name":"Mullvad",` +
+		`"last_seen":"2026-11-21","confidence":"high"},"is_bogon":false}`
+	if got := render(t, FormatPretty, Opts{Fields: []string{"vpn"}}, answer); strings.Contains(got, "method") {
+		t.Errorf("-f vpn prints vpn.method:\n%s", got)
+	}
+	if got := render(t, FormatPretty, Opts{Fields: []string{"vpn.method"}}, answer); !strings.HasPrefix(got,
+		"vpn.method") {
+		t.Errorf("-f vpn.method:\n%s", got)
+	}
+	if got := render(t, FormatCSV, Opts{Fields: []string{"vpn"}}, answer); !strings.HasPrefix(got,
+		"vpn.provider,vpn.provider_name,vpn.last_seen,vpn.confidence,vpn.method\n") {
+		t.Errorf("--csv -f vpn:\n%s", got)
+	}
+}
+
 // --field takes the proxy fields Columns gained last, alone or with the rest of
 // their object, and CSV prints them, a list as its JSON.
 func TestFieldTakesEveryProxyField(t *testing.T) {

@@ -230,21 +230,26 @@ func (r Record) All() []string {
 	return r.listed(true)
 }
 
-// Selected lists what a --field selection names, an object as its fields,
-// except that a detail object which arrived empty is listed once by its own
-// name, as Present lists it.
+// Selected lists what a --field selection names, an object as its fields but
+// a retired one the answer lacks, which only naming it alone shows; a detail
+// object which arrived empty is listed once by its own name, as Present lists it.
 func (r Record) Selected(fields []string) []string {
 	out := make([]string, 0, len(fields))
 	seen := make(map[string]bool)
-	for _, f := range ExpandFields(fields) {
-		obj, _, nested := strings.Cut(f, ".")
-		if !nested || !r[obj].EmptyObject {
-			out = append(out, f)
-			continue
-		}
-		if !seen[obj] {
-			out = append(out, obj)
-			seen[obj] = true
+	for _, named := range fields {
+		for _, f := range ExpandFields([]string{named}) {
+			if retired[f] && f != named && !r[f].Present {
+				continue
+			}
+			obj, _, nested := strings.Cut(f, ".")
+			if !nested || !r[obj].EmptyObject {
+				out = append(out, f)
+				continue
+			}
+			if !seen[obj] {
+				out = append(out, obj)
+				seen[obj] = true
+			}
 		}
 	}
 	return out
