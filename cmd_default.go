@@ -22,7 +22,8 @@ Description:
   block; anything resolving to more than one prints JSON.
 
   An address that could not be answered gets its error in the output, in
-  place of an answer, and the command then exits 1.
+  place of an answer (on standard error with --csv), and the command then
+  exits 1.
 
   It works with no account at all: a lookup answers whether the address is a
   VPN, a Tor node, a relay or anycast, with its location, asn and hostname,

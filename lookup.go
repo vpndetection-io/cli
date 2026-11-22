@@ -79,6 +79,7 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 			Fields:     opts.fields,
 			ShowAbsent: opts.showAbsent,
 			Color:      !color.NoColor,
+			Errors:     os.Stderr,
 		})
 	}
 

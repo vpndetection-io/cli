@@ -76,7 +76,7 @@ func main() {
 	}
 
 	if err == errUnanswered {
-		// Each unanswered address carries its error in the output already.
+		// Each unanswered address has had its error printed already.
 		os.Exit(1)
 	}
 	if err != nil {

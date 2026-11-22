@@ -279,6 +279,54 @@ func TestLookupReportsAnUnansweredAddress(t *testing.T) {
 	}
 }
 
+// With --csv a refused lookup's error goes to standard error, since the row has no column for it,
+// and the row holds its address alone.
+func TestCSVReportsAnUnansweredAddressOnStandardError(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = fmt.Fprint(w, `{"error": "invalid API key"}`)
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "test-key")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	var out *os.File
+	errs, err := captureFile(t, &os.Stderr, func() error {
+		var lookupErr error
+		out, lookupErr = captureStdout(t, func() error {
+			return runLookup(t.Context(), []string{"1.1.1.1", "2.2.2.2"},
+				lookupOpts{format: lib.FormatCSV, fields: []string{"ip", "is_vpn"}})
+		})
+		return lookupErr
+	})
+	if err != errUnanswered {
+		t.Errorf("runLookup = %v, want errUnanswered", err)
+	}
+	written, readErr := io.ReadAll(out)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if want := "ip,is_vpn\n1.1.1.1,\n2.2.2.2,\n"; string(written) != want {
+		t.Errorf("wrote\n%s\nwant\n%s", written, want)
+	}
+	reported, readErr := io.ReadAll(errs)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	for _, ip := range []string{"1.1.1.1", "2.2.2.2"} {
+		want := "err: " + ip + ": vpndetection: unauthorized (HTTP 401)"
+		if !strings.Contains(string(reported), want) {
+			t.Errorf("standard error lacks %q:\n%s", want, reported)
+		}
+	}
+}
+
 // A list file that starts with a byte order mark, as Excel's "CSV UTF-8" export
 // writes one, loses none of its addresses: the first is not the mark glued to it.
 func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
@@ -330,16 +378,23 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 // rewound for reading, with fn's error.
 func captureStdout(t *testing.T, fn func() error) (*os.File, error) {
 	t.Helper()
-	file, err := os.CreateTemp(t.TempDir(), "stdout")
+	return captureFile(t, &os.Stdout, fn)
+}
+
+// captureFile runs fn with *std, os.Stdout or os.Stderr, pointed at a file, and returns that file
+// rewound for reading, with fn's error.
+func captureFile(t *testing.T, std **os.File, fn func() error) (*os.File, error) {
+	t.Helper()
+	file, err := os.CreateTemp(t.TempDir(), "std")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = file.Close() })
 
-	saved := os.Stdout
-	os.Stdout = file
+	saved := *std
+	*std = file
 	fnErr := fn()
-	os.Stdout = saved
+	*std = saved
 	if _, err := file.Seek(0, 0); err != nil {
 		t.Fatal(err)
 	}

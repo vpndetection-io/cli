@@ -231,6 +231,8 @@ $ vpndetection bulk addresses.txt --jsonl > answers.jsonl || true
 $ jq -r 'select(.error) | .ip' answers.jsonl
 ```
 
+CSV has no column for an error, so with `--csv` a failed address's row holds the address alone, and its error goes to standard error.
+
 ### Sessions
 
 Credentials are stored in named sessions, so one machine can hold several organizations' keys and switch between them without logging in again:

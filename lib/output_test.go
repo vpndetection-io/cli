@@ -167,6 +167,22 @@ func TestJSONCarriesPerAddressErrors(t *testing.T) {
 	}
 }
 
+// CSV has no column for a failure, so it goes to Errors, beside a row holding the address alone:
+// an empty cell says the plan leaves a field out, never that the lookup failed.
+func TestCSVSendsEachFailureToErrors(t *testing.T) {
+	var out, errs strings.Builder
+	w := NewWriter(&out, FormatCSV, Opts{Fields: []string{"ip", "is_vpn"}, Errors: &errs})
+	if err := w.WriteError("9.9.9.9", errors.New("rate limit exceeded")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "ip,is_vpn\n9.9.9.9,\n" || errs.String() != "err: 9.9.9.9: rate limit exceeded\n" {
+		t.Errorf("wrote %q, and %q to Errors", out.String(), errs.String())
+	}
+}
+
 func TestJSONLIsOnePerLine(t *testing.T) {
 	got := strings.TrimSpace(render(t, FormatJSONL, Opts{}, freeAnswer, maxAnswer))
 	lines := strings.Split(got, "\n")

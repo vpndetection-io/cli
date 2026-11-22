@@ -51,6 +51,9 @@ type Opts struct {
 	ShowAbsent bool
 	// Color enables ANSI color in the pretty format.
 	Color bool
+	// Errors receives each address's failure where the format has no place for it: CSV, whose
+	// columns hold none. Nil drops it.
+	Errors io.Writer
 }
 
 // Writer streams answers in one format.
@@ -233,14 +236,15 @@ func (c *csvWriter) WriteError(ip string, err error) error {
 	cols := c.columns()
 	row := make([]string, len(cols))
 	for i, col := range cols {
-		switch col {
-		case "ip":
+		if col == "ip" {
 			row[i] = ip
-		case "error":
-			row[i] = err.Error()
 		}
 	}
-	return c.w.Write(row)
+	if wErr := c.w.Write(row); wErr != nil || c.opts.Errors == nil {
+		return wErr
+	}
+	_, wErr := fmt.Fprintf(c.opts.Errors, "err: %s: %v\n", ip, err)
+	return wErr
 }
 
 func (c *csvWriter) writeHeader() error {
