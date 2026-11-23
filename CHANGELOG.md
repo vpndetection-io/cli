@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.16.0 - 2026-11-23
+
+### Breaking changes
+
+- Take sdk-go v5.20.0: is_bot, and a paid answer's bot after the CDN's ([`c4f4d30`](https://github.com/vpndetection-io/cli/commit/c4f4d30fa2e7097db2f0b2888ee5ae1bb8facb7d))
+
 ## 1.15.2 - 2026-11-22
 
 ### Fixes
