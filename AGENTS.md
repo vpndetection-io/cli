@@ -129,7 +129,11 @@ pre-push leak gate refuses it. Anything internal pulls the public image.
   `oapi-codegen/runtime` - so `go version -m` on a release binary is the set that
   ships. Releases are stripped, so whether a flagged symbol is actually linked
   takes `go tool nm` on an unstripped build for each affected GOOS.
-- **Chocolatey has no 1.2.0 through 1.3.1.** Each push was refused (`403`) while
-  1.1.0, the first version, sat in moderation; once it was approved
-  (2026-09-24) only the latest tag, 1.3.2, went out. Every version still waits
-  for a human reviewer.
+- **Chocolatey has no 1.2.0 through 1.3.1, nor 1.10.0.** Each of the first was
+  refused (`403`) while 1.1.0, the first version, sat in moderation; once it
+  was approved (2026-09-24) only the latest tag, 1.3.2, went out. 1.10.0 sat
+  Waiting on a failure of Chocolatey's own validator, replaced by 1.10.1 the
+  next day, until Chocolatey closed it as stale (2026-11-23). The package is
+  trusted since 1.6.0: a version that passes the automated checks is approved
+  with no human, its virus scan Flagged by 1-5 detections, a note that blocks
+  nothing.
