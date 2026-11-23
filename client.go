@@ -104,10 +104,13 @@ func (c *Client) HasKey() bool { return c.key != "" }
 // (lookupEach), and so it is for a key on the free plan, Unlimited, whose
 // batch of more than one address the API answers 402.
 //
+// A non-empty agent is a visitor's User-Agent, sent with every address, and an
+// answer is cached for that agent alone.
+//
 // A bogon is answered by the SDK without a request and is not cached: it costs
 // nothing to recompute and would otherwise take a slot.
 func (c *Client) LookupBatch(
-	ctx context.Context, ips []string,
+	ctx context.Context, ips []string, agent string,
 ) (map[string]vpndetection.BatchResult, error) {
 	out := make(map[string]vpndetection.BatchResult, len(ips))
 	miss := make([]string, 0, len(ips))
@@ -119,7 +122,7 @@ func (c *Client) LookupBatch(
 			miss = append(miss, ip)
 			continue
 		}
-		if hit := c.cache.Get(ip); hit != nil {
+		if hit := c.cache.Get(ip, agent); hit != nil {
 			out[ip] = vpndetection.BatchResult{Result: hit}
 			continue
 		}
@@ -133,14 +136,14 @@ func (c *Client) LookupBatch(
 	var answers map[string]vpndetection.BatchResult
 	if c.HasKey() {
 		var err error
-		if answers, err = c.api.LookupBatch(ctx, miss); err != nil {
+		if answers, err = c.api.LookupBatch(ctx, miss, vpndetection.UserAgent(agent)); err != nil {
 			return out, err
 		}
 		if len(miss) > 1 && batchNeedsPaid(answers) {
-			answers = c.lookupEach(ctx, miss)
+			answers = c.lookupEach(ctx, miss, agent)
 		}
 	} else {
-		answers = c.lookupEach(ctx, miss)
+		answers = c.lookupEach(ctx, miss, agent)
 	}
 	fresh := make(map[string]*vpndetection.Result, len(answers))
 	for ip, answer := range answers {
@@ -152,7 +155,7 @@ func (c *Client) LookupBatch(
 			fresh[ip] = answer.Result
 		}
 	}
-	c.cache.PutBatch(fresh)
+	c.cache.PutBatch(fresh, agent)
 	return out, nil
 }
 
@@ -160,13 +163,15 @@ func (c *Client) LookupBatch(
 // whose batch is refused: no key, or a key on the free plan. Past the API's
 // rate for Unlimited, a lookup is answered 429 with Retry-After, which the SDK
 // waits out and retries.
-func (c *Client) lookupEach(ctx context.Context, ips []string) map[string]vpndetection.BatchResult {
+func (c *Client) lookupEach(
+	ctx context.Context, ips []string, agent string,
+) map[string]vpndetection.BatchResult {
 	answers := make([]vpndetection.BatchResult, len(ips))
 	group := new(errgroup.Group)
 	group.SetLimit(resolveConcurrency())
 	for i, ip := range ips {
 		group.Go(func() error {
-			r, err := c.api.Lookup(ctx, ip)
+			r, err := c.api.Lookup(ctx, ip, vpndetection.UserAgent(agent))
 			answers[i] = vpndetection.BatchResult{Result: r, Err: err}
 			return nil
 		})

@@ -375,6 +375,27 @@ func TestPrettyShowAbsent(t *testing.T) {
 	}
 }
 
+// The visitor's agent's verdict prints last among the objects, before hostname, and
+// --show-absent lists it as '-' only for a lookup that sent an agent: a keyless or
+// free answer to one is left without it, which no plan answers to a lookup without.
+func TestPrettyPrintsTheAgentsVerdict(t *testing.T) {
+	const spoofed = `{"ip":"146.70.116.130","is_bogon":false,"is_vpn":true,"hostname":"h.example.net",` +
+		`"user_agent":{"agent":"Googlebot","kind":"bot","verdict":"spoofed"}}`
+	got := render(t, FormatPretty, Opts{}, spoofed)
+	want := "user_agent.agent    Googlebot\nuser_agent.kind     bot\nuser_agent.verdict  spoofed\n" +
+		"hostname            h.example.net\n"
+	if !strings.HasSuffix(got, want) {
+		t.Errorf("got\n%s\nwant it to end\n%s", got, want)
+	}
+	if got := render(t, FormatPretty, Opts{ShowAbsent: true}, freeAnswer); strings.Contains(got, "user_agent") {
+		t.Errorf("--show-absent listed user_agent for a lookup that sent no agent:\n%s", got)
+	}
+	got = render(t, FormatPretty, Opts{ShowAbsent: true, AgentSent: true}, freeAnswer)
+	if !strings.Contains(got, "\nuser_agent.verdict ") || !strings.Contains(got, " -\nweb ") {
+		t.Errorf("--show-absent left out the user_agent a lookup sending an agent was not answered:\n%s", got)
+	}
+}
+
 // --show-absent prints a detail object that arrived empty as {}, as the block
 // does by default, never as a '-' for each of its fields, which says the plan
 // leaves them out. An object the plan does leave out still prints that way.

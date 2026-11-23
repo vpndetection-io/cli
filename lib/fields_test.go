@@ -146,16 +146,31 @@ func TestPresentListsLocationAndAsnAfterTheDetails(t *testing.T) {
 }
 
 // --show-absent lists every field in its place, but never vpn.method, which keeps
-// its CSV column though no answer carries it since 2026-10-20.
+// its CSV column though no answer carries it since 2026-10-20, and user_agent only
+// for a lookup that sent an agent, since no plan answers it to one that did not.
 func TestAllLeavesOutTheRetiredColumn(t *testing.T) {
-	got := flattenJSON(t, freeAnswer).All()
-	for _, f := range got {
-		if f == "vpn.method" {
-			t.Fatalf("All lists vpn.method, which no answer carries: %v", got)
+	agentless := 0
+	for _, col := range Columns {
+		if !strings.HasPrefix(col, "user_agent.") {
+			agentless++
 		}
 	}
-	if len(got) != len(Columns)-1 {
-		t.Errorf("All lists %d fields, want every column but vpn.method (%d): %v", len(got), len(Columns)-1, got)
+	for _, c := range []struct {
+		agentSent bool
+		want      int
+	}{{false, agentless - 1}, {true, len(Columns) - 1}} {
+		got := flattenJSON(t, freeAnswer).All(c.agentSent)
+		for _, f := range got {
+			if f == "vpn.method" {
+				t.Fatalf("All lists vpn.method, which no answer carries: %v", got)
+			}
+			if !c.agentSent && strings.HasPrefix(f, "user_agent.") {
+				t.Fatalf("All lists %s for a lookup that sent no agent: %v", f, got)
+			}
+		}
+		if len(got) != c.want {
+			t.Errorf("agent sent %v: All lists %d fields, want %d: %v", c.agentSent, len(got), c.want, got)
+		}
 	}
 }
 
@@ -215,11 +230,8 @@ func TestValidateAndExpandFields(t *testing.T) {
 
 // Columns names every field the SDK's answer can carry, and nothing else, so
 // neither CSV nor --field leaves one out. A field a new sdk-go brings fails
-// here, on the bump that brings it. user_agent is the one left out: the API
-// answers it only to a lookup that sent a visitor's User-Agent, which this
-// CLI's lookups do not, so no answer it gets carries it.
+// here, on the bump that brings it.
 func TestColumnsAreTheSDKsFields(t *testing.T) {
-	unrequested := map[string]bool{"user_agent": true}
 	var answer vpndetection.Result
 	fill(reflect.ValueOf(&answer).Elem())
 	rec, err := Flatten(&answer)
@@ -233,20 +245,10 @@ func TestColumnsAreTheSDKsFields(t *testing.T) {
 			t.Errorf("Columns names %s, which the SDK's answer does not carry", col)
 		}
 	}
-	carried := map[string]bool{}
 	for k := range rec {
-		if top, _, _ := strings.Cut(k, "."); unrequested[top] {
-			carried[top] = true
-			continue
-		}
 		if !named[k] {
 			t.Errorf("the SDK's answer carries %s, which Columns does not name: "+
 				"append it, so no CSV column moves", k)
-		}
-	}
-	for f := range unrequested {
-		if !carried[f] {
-			t.Errorf("the SDK's answer no longer carries %s: drop it from the fields left out", f)
 		}
 	}
 }

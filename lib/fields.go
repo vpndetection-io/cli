@@ -92,6 +92,10 @@ var Columns = []string{
 	"hostname",
 	"abuse.email", "abuse.name", "abuse.phone", "abuse.address", "abuse.country", "abuse.network",
 	"abuse.validated", "abuse.unvalidated_since",
+
+	// Only to a lookup that sent a visitor's agent, on a paid plan or the trial,
+	// from 1.17.0: the agent it names, its kind, and whether the address bears it out.
+	"user_agent.agent", "user_agent.kind", "user_agent.verdict",
 }
 
 // retired are columns no answer carries any more, kept so no CSV column moves.
@@ -211,11 +215,11 @@ func (r Record) Get(field string) Cell { return r[field] }
 
 // Objects are the detail objects, in the order output presents them: each
 // flag's, in Flags' order, then the location and the AS, which every answer
-// carries whole, and the company and abuse contact.
+// carries whole, the company and abuse contact, and the visitor's agent.
 var Objects = []string{
 	"vpn", "hosting", "relay", "tor", "cdn", "bot", "resproxy", "dcproxy", "mobproxy",
 	"pubproxy", "carrier", "satellite", "ssh", "smtp", "dns_resolver", "bittorrent",
-	"location", "asn", "company", "abuse",
+	"location", "asn", "company", "abuse", "user_agent",
 }
 
 // Present lists the fields this answer actually carries, in display order:
@@ -225,13 +229,15 @@ var Objects = []string{
 // its fields, because that is what it is - `"vpn": {}` says the flag above it is
 // false, and expanding it into four blank rows would say something else.
 func (r Record) Present() []string {
-	return r.listed(false)
+	return r.listed(false, false)
 }
 
 // All lists what Present does and, each in its place among them, the fields
-// this answer does not carry, which is what --show-absent prints.
-func (r Record) All() []string {
-	return r.listed(true)
+// this answer does not carry, which is what --show-absent prints. user_agent is
+// among them only when the lookup sent an agent: without one, no plan answers
+// it, and listing it would say the plan left it out.
+func (r Record) All(agentSent bool) []string {
+	return r.listed(true, agentSent)
 }
 
 // Selected lists what a --field selection names, an object as its fields but
@@ -259,11 +265,17 @@ func (r Record) Selected(fields []string) []string {
 	return out
 }
 
-func (r Record) listed(absent bool) []string {
+func (r Record) listed(absent, agentSent bool) []string {
 	out := make([]string, 0, len(Columns))
 	seen := make(map[string]bool, len(Columns))
+	listable := func(k string) bool {
+		if r[k].Present {
+			return true
+		}
+		return absent && !retired[k] && (agentSent || !strings.HasPrefix(k, "user_agent."))
+	}
 	emit := func(k string) {
-		if (absent && !retired[k] || r[k].Present) && !seen[k] {
+		if listable(k) && !seen[k] {
 			out = append(out, k)
 			seen[k] = true
 		}

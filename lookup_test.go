@@ -97,6 +97,95 @@ func TestBulkIsNotCappedAtTheBatchEndpointsThousand(t *testing.T) {
 	}
 }
 
+// --user-agent goes with every address, keyed or not: in a batch's user_agents,
+// and on each keyless GET as user_agent.
+func TestTheVisitorsAgentGoesWithEveryAddress(t *testing.T) {
+	const agent = "Googlebot/2.1 (+http://www.google.com/bot.html)"
+	addrs := []string{"66.249.66.1", "146.70.116.130"}
+	for _, key := range []string{"test-key", ""} {
+		var mu sync.Mutex
+		sent := map[string]string{}
+		api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			mu.Lock()
+			defer mu.Unlock()
+			if r.Method == http.MethodPost {
+				var in struct {
+					IPs    []string          `json:"ips"`
+					Agents map[string]string `json:"user_agents"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+					http.Error(w, `{"error":"unreadable body"}`, http.StatusBadRequest)
+					return
+				}
+				results := map[string]any{}
+				for _, ip := range in.IPs {
+					sent[ip] = in.Agents[ip]
+					results[ip] = map[string]any{"ip": ip, "is_vpn": false}
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"results": results, "errors": map[string]any{}})
+				return
+			}
+			ip := strings.TrimPrefix(r.URL.Path, "/")
+			sent[ip] = r.URL.Query().Get("user_agent")
+			_ = json.NewEncoder(w).Encode(map[string]any{"ip": ip, "is_vpn": false})
+		}))
+
+		t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+		t.Setenv("VPNDETECTION_API_KEY", key)
+		t.Setenv("VPNDETECTION_SESSION", "")
+		savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+		gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+		_, err := captureStdout(t, func() error {
+			return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL, agent: agent})
+		})
+		gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache
+		api.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, ip := range addrs {
+			if sent[ip] != agent {
+				t.Errorf("key %q: %s was sent agent %q, want %q", key, ip, sent[ip], agent)
+			}
+		}
+	}
+}
+
+// --show-absent lists user_agent, as '-', for a lookup that sent an agent and was
+// answered without a verdict, as a keyless one is, and never for one that sent none.
+func TestShowAbsentListsTheVerdictOnlyForALookupSendingAnAgent(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ip": strings.TrimPrefix(r.URL.Path, "/"), "is_vpn": true})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, true
+
+	for _, agent := range []string{"Googlebot/2.1", ""} {
+		out, err := captureStdout(t, func() error {
+			opts := lookupOpts{format: lib.FormatPretty, showAbsent: true, agent: agent}
+			return runLookup(t.Context(), []string{"146.70.116.130"}, opts)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		block, err := io.ReadAll(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if listed := strings.Contains(string(block), "user_agent.verdict"); listed != (agent != "") {
+			t.Errorf("agent %q: user_agent.verdict listed is %v:\n%s", agent, listed, block)
+		}
+	}
+}
+
 // POST /batch needs a key, so without one each address is its own GET, answered
 // all the same.
 func TestLookupWithoutAKeyIsOneGetPerAddress(t *testing.T) {

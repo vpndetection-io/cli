@@ -27,6 +27,7 @@ Examples:
   $ %[1]s bulk 8.8.8.0/24
   $ %[1]s bulk 1.1.1.1 8.8.8.8 --csv
   $ cat addresses.txt | %[1]s bulk --jsonl
+  $ %[1]s bulk 66.249.66.1 146.70.116.130 --user-agent 'Googlebot/2.1' --csv
 
 Options:
   Takes every option the default command takes; run '%[1]s --help'.
@@ -36,6 +37,7 @@ Options:
 func cmdBulk() error {
 	globalFlags()
 	lookupFlags()
+	agent := userAgentFlag()
 	resolve := formatFlags()
 	args := parseSubFlags()
 
@@ -49,6 +51,7 @@ func cmdBulk() error {
 		return err
 	}
 	opts.forceBulk = true
+	opts.agent = *agent
 	// Prompting is right here and nowhere else: this command exists to consume
 	// a list, so a bare `bulk` at a terminal means "let me type one".
 	opts.input = iputil.Opts{Stdin: true, Files: true, Interactive: true}

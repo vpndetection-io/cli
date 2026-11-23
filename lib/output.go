@@ -49,6 +49,9 @@ type Opts struct {
 	// ShowAbsent renders the fields this plan does not include, rather than
 	// omitting them.
 	ShowAbsent bool
+	// AgentSent says the lookup sent a visitor's agent, so ShowAbsent renders
+	// user_agent too, which no answer carries otherwise.
+	AgentSent bool
 	// Color enables ANSI color in the pretty format.
 	Color bool
 	// Errors receives each address's failure where the format has no place for it: CSV, whose
@@ -361,7 +364,7 @@ func WritePretty(w io.Writer, rec Record, opts Opts) error {
 	case len(opts.Fields) > 0:
 		fields = rec.Selected(opts.Fields)
 	case opts.ShowAbsent:
-		fields = rec.All()
+		fields = rec.All(opts.AgentSent)
 	}
 
 	width := 0

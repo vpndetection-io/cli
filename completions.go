@@ -46,9 +46,17 @@ func sessionNames() complete.Predictor {
 	return predict.Func(func(string) []string { return gConfig.SessionNames() })
 }
 
+// addressFlags are a lookup of addresses' flags: the output options, and the
+// visitor's agent, which myip does not take.
+func addressFlags() map[string]complete.Predictor {
+	flags := outputFlags()
+	flags["--user-agent"] = predict.Something
+	return flags
+}
+
 var completions = &complete.Command{
 	Sub: map[string]*complete.Command{
-		"bulk":     {Flags: outputFlags()},
+		"bulk":     {Flags: addressFlags()},
 		"myip":     {Flags: outputFlags()},
 		"database": databaseCompletions,
 		"db":       databaseCompletions,
@@ -140,8 +148,8 @@ var whoamiCompletions = &complete.Command{Flags: map[string]complete.Predictor{
 // handleCompletions answers a shell completion request, if this is one.
 func handleCompletions() {
 	// Also the top-level flag set, so completing at the very start offers the
-	// output options an address lookup takes.
-	for flag, p := range outputFlags() {
+	// options an address lookup takes.
+	for flag, p := range addressFlags() {
 		if _, taken := completions.Flags[flag]; !taken {
 			completions.Flags[flag] = p
 		}

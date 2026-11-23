@@ -223,6 +223,20 @@ Bulk runs stream: nothing is held in memory beyond one batch, so a `/8` is a lon
 
 Output formats are `--pretty`, `--json`, `--jsonl`, `--csv` and `--yaml`.
 
+### Crawler verification
+
+`--user-agent` sends a visitor's User-Agent with every address, and on a paid plan or the trial each answer's `user_agent` names the agent, its kind, and whether this address bears it out: `verified`, `spoofed`, `unverifiable` or `not_bot`. So a request claiming to be Googlebot can be checked against the address it came from:
+
+```console
+$ vpndetection bulk 66.249.66.1 146.70.116.130 -f ip,user_agent --csv \
+    --user-agent 'Googlebot/2.1 (+http://www.google.com/bot.html)'
+ip,user_agent.agent,user_agent.kind,user_agent.verdict
+66.249.66.1,Googlebot,bot,verified
+146.70.116.130,Googlebot,bot,spoofed
+```
+
+One agent goes with every address in a run.
+
 ### Exit status
 
 A lookup exits 1 when any address could not be answered, and 0 when every one was. Whatever went wrong - a key the API refused, a spent allowance, the API out of reach - that address gets its error in the output, in place of its answer, and every other address is answered as usual. A script that can live with gaps adds `|| true` and finds them in the output:
@@ -346,6 +360,8 @@ How much you get back per lookup depends on the plan behind your key. See the [p
 
 A paid plan names whose bot uses an address `is_bot` flags: its operator, its user agents, what they do and whether the operator vouches for it. In CSV `is_bot` follows `is_cdn`, and the `bot` columns follow the `cdn` ones.
 
+A lookup sent with `--user-agent` gets `user_agent` on a paid plan or the trial: the agent it names, its kind and whether the address bears it out. Its three columns are CSV's last, and empty for a lookup sent without one.
+
 A paid plan also says whether the address is a mobile carrier's or a satellite link's and whether it runs SSH, SMTP, a web server, an open DNS resolver or BitTorrent, each with its detail, plus its city, the company using it and its abuse contact. In CSV these columns come after `cap_reached`, so no earlier column moves, and `web` is one column holding its list as JSON.
 
 **A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
@@ -364,7 +380,7 @@ vpndetection config list
 vpndetection config cache=disable cache_ttl=24h
 ```
 
-Entries are partitioned by **credential**, because which fields an answer carries depends on the plan behind the key - one key's answers are never served to another's. Clearing empties every partition.
+Entries are partitioned by **credential**, because which fields an answer carries depends on the plan behind the key - one key's answers are never served to another's. An answer to a lookup sent with `--user-agent` is cached for that agent alone, since it carries that agent's verdict. Clearing empties every partition.
 
 ## Color Output
 

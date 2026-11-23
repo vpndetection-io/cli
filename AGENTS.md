@@ -14,7 +14,10 @@ answer carries is decided by the plan behind the key, so a cache keyed on the
 address alone hands a max-tier caller a free-tier answer - which reads as "not
 flagged" rather than "not included". That is the absent-versus-false trap served
 from our own disk. The bucket is `sha256(key)[:12] + "|" + host`; the key itself
-never reaches disk. `cache_test.go` pins both halves through `NewClient`, not
+never reaches disk. Within it an answer to a `--user-agent` lookup is stored
+under its address plus a hash of the agent (1.17.0), since it carries that
+agent's verdict: keyed on the address alone, Googlebot's `verified` would be
+served to a lookup sending another agent, or none. `cache_test.go` pins both halves through `NewClient`, not
 only in `cacheBucket`: tests of that function alone stay green when `NewClient`
 opens the cache under an empty key, one bucket for every credential, or without
 the base URL, one for every deployment. The `[:12]` is
@@ -51,8 +54,7 @@ Three exceptions were chosen, not followed, each moving every column after it:
 `provider_name` right after its object's `provider`, and 1.16.0 `is_bot` after
 `is_cdn` and `bot.*` after `cdn.*`, the answer's order. Ask again for
 the next field rather than place it by any precedent. `TestColumnsAreTheSDKsFields`
-fails on the sdk-go bump that brings a field the list does not name (it skips
-`user_agent`, answered only to a lookup that sent a visitor's agent), and
+fails on the sdk-go bump that brings a field the list does not name, and
 `TestFlagsAndObjectsFollowColumns` when `Flags` or `Objects` misses a flag or
 object it gains, which the readable block would print apart from its family.
 Since 1.15.0 the readable order is no longer Columns': `Objects` holds each
@@ -61,6 +63,8 @@ block ends with `trial_expired` or `cap_reached`, though their columns, 86 and
 87, are not the last. A field the API stopped serving keeps its column too, and
 `retired` (`vpn.method`) keeps it out of the readable block unless an answer
 carries it or `-f` names it alone: `--show-absent` and `-f vpn` skip it (1.15.2).
+`--show-absent` lists `user_agent` only for a lookup that sent an agent (`Opts.AgentSent`):
+without one no plan answers it, so a `-` there would blame the plan.
 
 **The subcommand is found by scanning, not by `os.Args[1]`**, which reads
 `vpndetection --session work db list` as a lookup of `--session`. `commandArg`

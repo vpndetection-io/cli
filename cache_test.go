@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -91,25 +95,25 @@ func TestCacheServesAnAnswerOnlyToTheKeyAndHostThatFetchedIt(t *testing.T) {
 	maxTier := open("key-max", "")
 	maxTier.cache.PutBatch(map[string]*vpndetection.Result{
 		ip: {LookupResponse: vpndetection.LookupResponse{IP: ip, IsHosting: &hosting}},
-	})
+	}, "")
 	maxTier.Close()
 
 	freeTier := open("key-free", "")
-	leaked := freeTier.cache.Get(ip)
+	leaked := freeTier.cache.Get(ip, "")
 	freeTier.Close()
 	if leaked != nil {
 		t.Error("the free key was served the max key's cached answer")
 	}
 
 	elsewhere := open("key-max", "https://api.example.com")
-	leaked = elsewhere.cache.Get(ip)
+	leaked = elsewhere.cache.Get(ip, "")
 	elsewhere.Close()
 	if leaked != nil {
 		t.Error("another deployment was served the default one's cached answer")
 	}
 
 	again := open("key-max", "")
-	hit := again.cache.Get(ip)
+	hit := again.cache.Get(ip, "")
 	again.Close()
 	if hit == nil || hit.IsHosting == nil {
 		t.Error("the max key does not get its own cached answer back")
@@ -127,8 +131,8 @@ func TestCacheForgetsAnExpiredAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fresh.PutBatch(answer)
-	hit := fresh.Get(ip)
+	fresh.PutBatch(answer, "")
+	hit := fresh.Get(ip, "")
 	_ = fresh.Close()
 	if hit == nil {
 		t.Fatal("an answer within its TTL was not served")
@@ -140,7 +144,7 @@ func TestCacheForgetsAnExpiredAnswer(t *testing.T) {
 	}
 	defer stale.Close()
 	time.Sleep(time.Millisecond)
-	if stale.Get(ip) != nil {
+	if stale.Get(ip, "") != nil {
 		t.Error("an answer past its TTL was served")
 	}
 }
@@ -175,10 +179,72 @@ func TestCacheSkipsAnAnswerReducedByTheTrialOrTheCap(t *testing.T) {
 			IP: a.ip, TrialExpired: a.trialExpired, CapReached: a.capReached,
 		}}
 	}
-	cache.PutBatch(batch)
+	cache.PutBatch(batch, "")
 	for _, a := range answers {
-		if got := cache.Get(a.ip) != nil; got != a.cached {
+		if got := cache.Get(a.ip, "") != nil; got != a.cached {
 			t.Errorf("%s: cached is %v, want %v", a.ip, got, a.cached)
+		}
+	}
+}
+
+// An answer to a lookup that sent a visitor's agent carries that agent's verdict,
+// so the cache serves it to that agent's lookups alone: never to another agent's,
+// nor to one sending none, which is never served an agent's answer either.
+func TestCacheServesAnAnswerOnlyToTheAgentItWasFetchedFor(t *testing.T) {
+	var requests atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		answer := map[string]any{"ip": strings.TrimPrefix(r.URL.Path, "/"), "is_vpn": false}
+		if agent := r.URL.Query().Get("user_agent"); agent != "" {
+			answer["user_agent"] = map[string]any{"agent": agent, "kind": "bot", "verdict": "spoofed"}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(answer)
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, false
+
+	const ip = "45.83.91.1"
+	steps := []struct {
+		agent   string
+		fetched bool
+	}{
+		{"Googlebot", true}, {"Googlebot", false}, {"bingbot", true},
+		{"", true}, {"", false}, {"Googlebot", false}, {"bingbot", false},
+	}
+	for i, step := range steps {
+		client, err := NewClient()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if client.cache == nil {
+			t.Fatal("the cache did not open")
+		}
+		before := requests.Load()
+		answers, err := client.LookupBatch(t.Context(), []string{ip}, step.agent)
+		client.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fetched := requests.Load() > before; fetched != step.fetched {
+			t.Errorf("step %d, agent %q: fetched is %v, want %v", i, step.agent, fetched, step.fetched)
+		}
+		answer := answers[ip]
+		if answer.Err != nil || answer.Result == nil {
+			t.Fatalf("step %d: unanswered: %v", i, answer.Err)
+		}
+		got := ""
+		if answer.Result.UserAgent != nil {
+			got = answer.Result.UserAgent.Agent
+		}
+		if got != step.agent {
+			t.Errorf("step %d: a lookup sending agent %q was served the verdict on %q", i, step.agent, got)
 		}
 	}
 }

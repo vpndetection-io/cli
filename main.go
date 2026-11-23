@@ -98,7 +98,7 @@ var subcommands = map[string]bool{
 var valueFlags = map[string]bool{
 	"--key": true, "-k": true, "--session": true, "--base-url": true,
 	"--format": true, "--field": true, "-f": true,
-	"--concurrency": true, "--retries": true, "--limit": true,
+	"--concurrency": true, "--retries": true, "--limit": true, "--user-agent": true,
 }
 
 // commandArg is the index in os.Args of the subcommand, or 0 for none.

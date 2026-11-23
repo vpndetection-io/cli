@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,7 +26,8 @@ import (
 // across keys hands a max-tier caller a free-tier answer it would read as "not
 // flagged" - the absent-versus-false trap, served from our own disk. The bucket
 // name is a hash of the key plus the API host; the key itself never lands on
-// disk here.
+// disk here. Within it an answer is stored under its address and the visitor's
+// agent sent with it, if any, since that answer carries the agent's verdict.
 type Cache struct {
 	db     *bbolt.DB
 	bucket []byte
@@ -96,8 +99,9 @@ func (c *Cache) Close() error {
 	return c.db.Close()
 }
 
-// Get returns a cached answer, or nil when there is none or it has expired.
-func (c *Cache) Get(ip string) *vpndetection.Result {
+// Get returns a cached answer to a lookup of ip sending agent, or nil when there
+// is none or it has expired.
+func (c *Cache) Get(ip, agent string) *vpndetection.Result {
 	if c == nil {
 		return nil
 	}
@@ -107,7 +111,7 @@ func (c *Cache) Get(ip string) *vpndetection.Result {
 		if b == nil {
 			return nil
 		}
-		raw := b.Get([]byte(ip))
+		raw := b.Get(entryKey(ip, agent))
 		if raw == nil {
 			return nil
 		}
@@ -130,7 +134,8 @@ func (c *Cache) Get(ip string) *vpndetection.Result {
 	return found.Result
 }
 
-// PutBatch stores many answers in one transaction, skipping a reduced one.
+// PutBatch stores many answers to lookups sending agent in one transaction,
+// skipping a reduced one.
 //
 // Errors are swallowed by design. A full disk or a read-only home directory
 // should not fail a lookup that already succeeded.
@@ -138,7 +143,7 @@ func (c *Cache) Get(ip string) *vpndetection.Result {
 // bbolt starts a new mmap-backed write transaction per Update, so a bulk run
 // doing one per address is dominated by transaction overhead rather than by the
 // writes.
-func (c *Cache) PutBatch(results map[string]*vpndetection.Result) {
+func (c *Cache) PutBatch(results map[string]*vpndetection.Result, agent string) {
 	if c == nil || len(results) == 0 {
 		return
 	}
@@ -156,12 +161,24 @@ func (c *Cache) PutBatch(results map[string]*vpndetection.Result) {
 			if err != nil {
 				continue
 			}
-			if err := b.Put([]byte(ip), raw); err != nil {
+			if err := b.Put(entryKey(ip, agent), raw); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+}
+
+// entryKey is where an answer is stored in its credential's bucket: its address,
+// and with a visitor's agent a hash of that agent too. An answer to a lookup that
+// sent one carries that agent's verdict, which another agent's lookup, or one
+// sending none, must not be served. Hashed, because an agent can be any length.
+func entryKey(ip, agent string) []byte {
+	if agent == "" {
+		return []byte(ip)
+	}
+	sum := sha256.Sum256([]byte(agent))
+	return []byte(ip + "|" + hex.EncodeToString(sum[:8]))
 }
 
 // reduced reports an answer cut to Unlimited's fields past the free trial or
