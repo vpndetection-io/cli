@@ -105,6 +105,8 @@ The result lands in `build/`. Go 1.26 or newer.
 
 ## Quick Start
 
+![The CLI looking up one address, then a list of four piped in as CSV](https://raw.githubusercontent.com/vpndetection-io/cli/main/assets/demo.gif)
+
 ### Default help message
 
 Invoking the CLI with nothing shows what it can do:
