@@ -45,18 +45,20 @@ change, keeps a row of the address alone and writes `err: <ip>: <error>` to
 
 **A field joins `lib.Columns` at its END, never beside its object's other
 fields**, because that order is the CSV header and a caller's column indexes
-must not move; the readable block lists it with its object all the same. Two
-exceptions were chosen, not followed, each moving every column after it: 1.10.0
-put `is_pubproxy` at column 11 with the other flags, and 1.13.0 each
-`provider_name` right after its object's `provider`. Ask again for the next
-field rather than place it by any precedent. `TestColumnsAreTheSDKsFields`
-fails on the sdk-go bump that brings a field the list does not name, and
+must not move; the readable block lists it with its object all the same.
+Three exceptions were chosen, not followed, each moving every column after it:
+1.10.0 put `is_pubproxy` at column 11 with the other flags, 1.13.0 each
+`provider_name` right after its object's `provider`, and 1.16.0 `is_bot` after
+`is_cdn` and `bot.*` after `cdn.*`, the answer's order. Ask again for
+the next field rather than place it by any precedent. `TestColumnsAreTheSDKsFields`
+fails on the sdk-go bump that brings a field the list does not name (it skips
+`user_agent`, answered only to a lookup that sent a visitor's agent), and
 `TestFlagsAndObjectsFollowColumns` when `Flags` or `Objects` misses a flag or
 object it gains, which the readable block would print apart from its family.
 Since 1.15.0 the readable order is no longer Columns': `Objects` holds each
 flag's detail in `Flags`' order, then location, asn, company and abuse, and the
-block ends with `trial_expired` or `cap_reached`, though their columns, 75 and
-76, are not the last. A field the API stopped serving keeps its column too, and
+block ends with `trial_expired` or `cap_reached`, though their columns, 86 and
+87, are not the last. A field the API stopped serving keeps its column too, and
 `retired` (`vpn.method`) keeps it out of the readable block unless an answer
 carries it or `-f` names it alone: `--show-absent` and `-f vpn` skip it (1.15.2).
 

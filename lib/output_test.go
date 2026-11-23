@@ -75,8 +75,8 @@ func TestCSVHeaderIsFixed(t *testing.T) {
 	}
 }
 
-// trial_expired and cap_reached keep the columns 1.14.0 gave them, the last
-// then, so no column moves, and the readable block prints each after the
+// trial_expired and cap_reached keep their columns, the last in 1.14.0 and 11
+// further right from 1.16.0's bot ones, and the readable block prints each after the
 // answer's fields, hostname and web included, where a user reads whether the
 // answer is Unlimited's: a trial key's because the trial is spent, a paid key's
 // because its organization's overage cap is reached. An answer carries at most
@@ -87,7 +87,7 @@ func TestPlanStateComesLast(t *testing.T) {
 		capped = `{"ip":"2.2.2.2","is_vpn":true,"is_bogon":false,"cap_reached":true,` +
 			`"is_web":false,"web":[],"hostname":"host.example.net"}`
 	)
-	const trial, capCol = 75, 76
+	const trial, capCol = 86, 87
 	if Columns[trial] != "trial_expired" || Columns[capCol] != "cap_reached" {
 		t.Fatalf("columns %d and %d are %s and %s", trial, capCol, Columns[trial], Columns[capCol])
 	}
@@ -441,6 +441,44 @@ func TestPrettyKeepsEachObjectTogether(t *testing.T) {
 			done[last] = true
 			last = obj
 		}
+	}
+}
+
+// botAnswer is the bot flag and object the API served a paid key for
+// 66.249.66.1 on 2026-11-23.
+const botAnswer = `{
+  "ip":"66.249.66.1","is_bogon":false,"is_cdn":false,"is_bot":true,"is_resproxy":false,
+  "cdn":{},
+  "bot":{"provider":"google","provider_name":"Google","agents":["Google-CloudVertexBot","GoogleOther",
+    "Googlebot"],"categories":["ai_search","other","search_engine"],"verified":true,"identity":"verified",
+    "verified_by":"list","confidence":"high","first_seen":"2026-11-21","last_seen":"2026-11-22"},
+  "resproxy":{}
+}`
+
+// The bot flag and its object print where the answer has them, after the CDN's
+// and before the residential proxy's, each field in the API's order and a list
+// as its JSON.
+func TestPrettyPrintsTheBotAfterTheCDN(t *testing.T) {
+	want := `ip                 66.249.66.1
+is_bogon           false
+is_cdn             false
+is_bot             true
+is_resproxy        false
+cdn                {}
+bot.provider       google
+bot.provider_name  Google
+bot.agents         ["Google-CloudVertexBot","GoogleOther","Googlebot"]
+bot.categories     ["ai_search","other","search_engine"]
+bot.verified       true
+bot.identity       verified
+bot.verified_by    list
+bot.confidence     high
+bot.first_seen     2026-11-21
+bot.last_seen      2026-11-22
+resproxy           {}
+`
+	if got := render(t, FormatPretty, Opts{}, botAnswer); got != want {
+		t.Errorf("got\n%s\nwant\n%s", got, want)
 	}
 }
 

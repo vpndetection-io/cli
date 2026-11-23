@@ -16,9 +16,10 @@ import (
 // the CSV contract. A caller's column indexes must not move because the API
 // grew a field, and a new field appearing silently at the end is far easier to
 // absorb than one appearing in the middle. The readable block lists each one
-// with its object's other fields all the same. Two exceptions were chosen:
-// 1.10.0 put is_pubproxy with the other flags, and 1.13.0 put each
-// provider_name right after its provider, each moving every column after it.
+// with its object's other fields all the same. Three exceptions were chosen:
+// 1.10.0 put is_pubproxy with the other flags, 1.13.0 put each provider_name
+// right after its provider, and 1.16.0 put is_bot after is_cdn and bot after
+// cdn, the answer's order, each moving every column after it.
 //
 // vpn.method keeps its column, always empty: no plan is answered with it since
 // 2026-10-20, and dropping it would move every column after it.
@@ -31,6 +32,7 @@ var Columns = []string{
 	"is_relay",
 	"is_tor",
 	"is_cdn",
+	"is_bot",
 	"is_resproxy",
 	"is_dcproxy",
 	"is_mobproxy",
@@ -41,6 +43,8 @@ var Columns = []string{
 	"relay.provider", "relay.provider_name", "relay.confidence", "relay.last_seen",
 	"tor.provider", "tor.provider_name", "tor.confidence", "tor.last_seen",
 	"cdn.provider", "cdn.provider_name", "cdn.confidence", "cdn.last_seen",
+	"bot.provider", "bot.provider_name", "bot.agents", "bot.categories", "bot.verified", "bot.identity",
+	"bot.verified_by", "bot.confidence", "bot.first_seen", "bot.last_seen",
 	"resproxy.provider", "resproxy.provider_name", "resproxy.first_seen", "resproxy.last_seen", "resproxy.hits",
 	"dcproxy.provider", "dcproxy.provider_name", "dcproxy.first_seen", "dcproxy.last_seen", "dcproxy.hits",
 	"mobproxy.provider", "mobproxy.provider_name", "mobproxy.first_seen", "mobproxy.last_seen", "mobproxy.hits",
@@ -98,7 +102,7 @@ var retired = map[string]bool{"vpn.method": true}
 // Flags are the top-level booleans, which is what a summary line shows.
 var Flags = []string{
 	"is_vpn", "is_hosting", "is_relay", "is_tor",
-	"is_cdn", "is_resproxy", "is_dcproxy", "is_mobproxy", "is_pubproxy",
+	"is_cdn", "is_bot", "is_resproxy", "is_dcproxy", "is_mobproxy", "is_pubproxy",
 	"is_anycast", "is_carrier", "is_satellite", "is_ssh", "is_smtp", "is_web", "is_dns_resolver",
 	"is_bittorrent",
 }
@@ -209,7 +213,7 @@ func (r Record) Get(field string) Cell { return r[field] }
 // flag's, in Flags' order, then the location and the AS, which every answer
 // carries whole, and the company and abuse contact.
 var Objects = []string{
-	"vpn", "hosting", "relay", "tor", "cdn", "resproxy", "dcproxy", "mobproxy",
+	"vpn", "hosting", "relay", "tor", "cdn", "bot", "resproxy", "dcproxy", "mobproxy",
 	"pubproxy", "carrier", "satellite", "ssh", "smtp", "dns_resolver", "bittorrent",
 	"location", "asn", "company", "abuse",
 }
