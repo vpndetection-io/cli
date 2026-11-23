@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.17.0 - 2026-11-23
+
+### Features
+
+- --user-agent checks a visitor's agent against each address ([`e2d744c`](https://github.com/vpndetection-io/cli/commit/e2d744c35fedcd03bca074b9b8140de44e014fb0))
+
 ## 1.16.0 - 2026-11-23
 
 ### Breaking changes
