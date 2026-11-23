@@ -9,6 +9,8 @@ Look up what an IP address is - a VPN exit, a hosting or CDN range, a bot, a Tor
 
 ## Getting Started
 
+![The CLI looking up one address, then a list of four piped in as CSV](https://raw.githubusercontent.com/vpndetection-io/cli/main/assets/demo.gif)
+
 No account is needed to start: Unlimited, the free plan, answers any address with no cap, with a key or without one: whether it is a VPN, a bot, a Tor node, a relay or anycast, where it is, the AS that announces it and its hostname, one address per request. Every paid plan answers all our data fields and looks addresses up in batches of up to 1,000, and a free account tries every field.
 
 ### macOS
@@ -104,8 +106,6 @@ cd cli
 The result lands in `build/`. Go 1.26 or newer.
 
 ## Quick Start
-
-![The CLI looking up one address, then a list of four piped in as CSV](https://raw.githubusercontent.com/vpndetection-io/cli/main/assets/demo.gif)
 
 ### Default help message
 
