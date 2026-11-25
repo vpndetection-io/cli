@@ -2,6 +2,13 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.17.1 - 2026-11-25
+
+### Fixes
+
+- whoami: a free key's trial ends once, never resets ([`e947371`](https://github.com/vpndetection-io/cli/commit/e947371e89dc13ed717156a1e5a64b022c11e59a))
+- Help and README: a paid plan answers every field, not every paid plan ([`b10063f`](https://github.com/vpndetection-io/cli/commit/b10063fbc927d55860c45576a1761ca8b89b9ee2))
+
 ## 1.17.0 - 2026-11-23
 
 ### Features
