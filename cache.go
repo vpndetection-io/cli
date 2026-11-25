@@ -183,7 +183,7 @@ func entryKey(ip, agent string) []byte {
 
 // reduced reports an answer cut to Unlimited's fields past the free trial or
 // the overage cap. It is unbilled, so caching it saves nothing, and a cached one
-// would outlive the trial's reset or a raised cap.
+// would outlive a new subscription or a raised cap.
 func reduced(r *vpndetection.Result) bool {
 	return vpndetection.BoolValue(r.TrialExpired) || vpndetection.BoolValue(r.CapReached)
 }

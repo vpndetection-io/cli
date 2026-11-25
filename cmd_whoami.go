@@ -23,7 +23,9 @@ Description:
 
   Usage counts against the anniversary of your subscription, not the calendar
   month and not the billing period, and it is the same number a lookup is
-  gated on. It can lag a few seconds behind what you have just sent.
+  gated on. It can lag a few seconds behind what you have just sent. With no
+  subscription it counts the free trial's lookups instead, and the trial ends
+  once rather than resetting.
 
 Examples:
   $ %[1]s whoami
@@ -108,16 +110,24 @@ func cmdWhoami() error {
 	// and its key never is, which is why the key alone decides the free plan's lines.
 	fmt.Printf("\nplan         %s\n", acct.Plan.Name)
 	if acct.Plan.Key == freePlanKey {
-		// The free plan, Unlimited: every lookup is answered with no cap, and the first ones in each
-		// usage window (the entitlement's, a UTC month) with every field, its trial. Nothing refuses it.
+		// The free plan, Unlimited: every lookup is answered with no cap, and those of its trial with
+		// every field, the usage window from the org's first lookup and the quota bounding it. The trial
+		// ends once, at either bound, and never resets. Nothing refuses past it.
 		fmt.Printf("every field  %s of %s lookups\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		fmt.Printf("past them    lookups answer with %s's fields until the trial resets\n", acct.Plan.Name)
-		fmt.Printf("resets       %s (%s)\n",
-			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
+		switch {
+		case !acct.Usage.WindowEnd.After(time.Now()):
+			fmt.Printf("trial ended  %s\n", acct.Usage.WindowEnd.Format(time.RFC3339))
+		case acct.Usage.Quota > 0 && acct.Usage.Requests >= acct.Usage.Quota:
+			fmt.Printf("trial ended  its lookups are spent\n")
+		default:
+			fmt.Printf("until        %s (%s)\n",
+				acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
+		}
+		fmt.Printf("past it      lookups answer with %s's fields\n", acct.Plan.Name)
 		return nil
 	}
 	fmt.Printf("fields       %s tier\n", acct.Plan.Tier)

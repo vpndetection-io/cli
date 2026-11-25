@@ -58,13 +58,13 @@ func TestWhoamiNamesThePlanAsServed(t *testing.T) {
 		{
 			`{"key":"free","name":"Unlimited","tier":"free"}`,
 			[]string{"plan         Unlimited\n", "every field  37 of 100 lookups\n",
-				"past them    lookups answer with Unlimited's fields until the trial resets\n"},
+				"past it      lookups answer with Unlimited's fields\n"},
 			"\nfields ",
 		},
 		{
 			`{"key":"free","name":"Open","tier":"free"}`,
 			[]string{"plan         Open\n", "every field  37 of 100 lookups\n",
-				"past them    lookups answer with Open's fields until the trial resets\n"},
+				"past it      lookups answer with Open's fields\n"},
 			"Unlimited",
 		},
 		{
@@ -85,6 +85,25 @@ func TestWhoamiNamesThePlanAsServed(t *testing.T) {
 		}
 		if strings.Contains(out, c.notWant) {
 			t.Errorf("plan %s: printed %q:\n%s", c.plan, c.notWant, out)
+		}
+	}
+}
+
+// A free key's trial ends once, at its window's end or once its lookups are spent, and never resets
+// (2026-11-24): whoami says until when it lasts, or that it ended, and what a lookup gets past it.
+func TestWhoamiSaysTheTrialEndsOnce(t *testing.T) {
+	for _, c := range []struct{ requests, end, want string }{
+		{"37", "2099-11-12T00:00:00Z", "\nuntil        2099-11-12T00:00:00Z (in "},
+		{"37", "1970-01-15T00:00:01Z", "\ntrial ended  1970-01-15T00:00:01Z\n"},
+		{"100", "2099-11-12T00:00:00Z", "\ntrial ended  its lookups are spent\n"},
+	} {
+		out := whoamiAgainst(t, `{"org_id":"f32191d0-ef02-450e-a505-eb5814c35cab",`+
+			`"apikey":{"id":"10c2b437-3aa2-4a63-bd17-8e7c8c7f0def","expires":null,"allowed_cidrs":[]},`+
+			`"plan":{"key":"free","name":"Unlimited","tier":"free"},"usage":{"requests":`+c.requests+
+			`,"quota":100,"hard_limit":null,"window_start":"1970-01-01T00:00:01Z","window_end":"`+c.end+`"}}`)
+		past := "\npast it      lookups answer with Unlimited's fields\n"
+		if !strings.Contains(out, c.want) || !strings.Contains(out, past) || strings.Contains(out, "reset") {
+			t.Errorf("%s of 100 until %s: want %q and %q, and no reset:\n%s", c.requests, c.end, c.want, past, out)
 		}
 	}
 }

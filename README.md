@@ -290,7 +290,7 @@ past it      lookups answer with Unlimited's fields, unbilled, until usage reset
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
 
-With overage turned on in Billing, `hard limit` is your overage cap, or `none` with no cap, and lookups past the quota are billed as overage. Also spelled `entitlement`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on.
+With overage turned on in Billing, `hard limit` is your overage cap, or `none` with no cap, and lookups past the quota are billed as overage. Also spelled `entitlement`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on. With no subscription, `whoami` shows the free trial instead: how many lookups it has answered with every field, and until when it lasts. It ends once rather than resetting, and `trial ended` says when it did.
 
 ### Databases
 
@@ -372,7 +372,7 @@ On a key with no paid plan, each answer carries `trial_expired`: `false` while t
 
 ## Caching
 
-Answers are cached on disk, so looking the same address up twice costs one request rather than two. An answer with `trial_expired` or `cap_reached` set to `true` isn't cached, so once the trial resets or your cap is raised the next lookup gets every field.
+Answers are cached on disk, so looking the same address up twice costs one request rather than two. An answer with `trial_expired` or `cap_reached` set to `true` isn't cached, so once you subscribe or your cap is raised the next lookup gets every field.
 
 ```bash
 vpndetection cache info
