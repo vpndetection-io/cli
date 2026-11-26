@@ -280,12 +280,12 @@ from         session default
 api          https://api.vpndetection.io
 org          85bb51e4-2eb6-4a31-8e4d-02ba8b98fe61
 
-plan         Max
+plan         Data
 fields       max tier
 
-used         412,908 of 5,000,000
-             [###                                     ] 8.3%
-hard limit   5,000,000
+used         412,908 of 1,000,000
+             [################                        ] 41.3%
+hard limit   1,000,000
 past it      lookups answer with Unlimited's fields, unbilled, until usage resets
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
