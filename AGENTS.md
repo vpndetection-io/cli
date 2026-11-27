@@ -24,6 +24,13 @@ the base URL, one for every deployment. The `[:12]` is
 pinned in `config_test.go` instead, because every test here passes on a
 one-character fingerprint - the two keys they sample differ at any width.
 
+**An `asn.type` of `""` is absent** (1.17.2): sdk-go keeps `Asn.Type` a plain
+string until its next major, so Unlimited's answer, which leaves it out, reads
+`""`, and `lib.answerJSON`, which every format reads an answer through, drops
+it. The SDK's record of what the wire left out is unexported, and the disk
+cache would lose it anyway, so a paid answer's `""` for an address no AS
+announces reads as absent too.
+
 **Bulk is chunked, never collected.** `runLookup` pulls addresses through
 `iputil.WalkAddrs` into batches of 10,000 and emits each batch before reading
 the next, so memory is bounded by the chunk rather than by what was typed. A

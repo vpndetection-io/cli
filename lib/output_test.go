@@ -3,6 +3,7 @@ package lib
 import (
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -570,4 +571,58 @@ func keys(m map[string]any) []string {
 		out = append(out, k)
 	}
 	return out
+}
+
+// An answer on Unlimited carries no asn.type, which the SDK's Asn holds as a plain
+// string until its next major, so it reads "" there: every format leaves it out, as
+// it does any field the plan does not include, and keeps a type that was served.
+func TestEveryFormatLeavesOutAnASTypeNotServed(t *testing.T) {
+	keyless := `{"ip":"146.70.116.130","is_vpn":true,"is_bogon":false,
+		"asn":{"asn":9009,"name":"M247 Europe SRL","domain":"m247global.com","prefix":"146.70.116.0/24",
+		"country":"RO","rpki_status":"not_found"}}`
+	paid := strings.Replace(keyless, `"prefix"`, `"type":"hosting","prefix"`, 1)
+	for _, format := range []Format{FormatJSON, FormatJSONL, FormatYAML, FormatPretty, FormatCSV} {
+		got := renderResult(t, format, Opts{ShowAbsent: true, Fields: []string{"asn"}}, keyless)
+		if strings.Contains(got, `"type"`) || strings.Contains(got, "type:") ||
+			strings.Contains(got, "asn.type ") && !regexp.MustCompile(`asn\.type +-`).MatchString(got) {
+			t.Errorf("%s: an unserved asn.type was printed:\n%s", format, got)
+		}
+		if !strings.Contains(got, "M247 Europe SRL") {
+			t.Errorf("%s: the AS's name is missing:\n%s", format, got)
+		}
+		if got := renderResult(t, format, Opts{}, keyless); strings.Contains(got, `"type"`) {
+			t.Errorf("%s, no selection: an unserved asn.type was printed:\n%s", format, got)
+		}
+		if got := renderResult(t, format, Opts{}, paid); !strings.Contains(got, "hosting") {
+			t.Errorf("%s: a served asn.type is missing:\n%s", format, got)
+		}
+	}
+}
+
+// renderResult writes each body as the SDK's Result, as the CLI's lookups do.
+func renderResult(t *testing.T, format Format, opts Opts, bodies ...string) string {
+	t.Helper()
+	var out strings.Builder
+	w := NewWriter(&out, format, opts)
+	for _, body := range bodies {
+		var r vpndetection.Result
+		if err := json.Unmarshal([]byte(body), &r); err != nil {
+			t.Fatal(err)
+		}
+		if err := w.Write(r.IP, &r); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return out.String()
+}
+
+// A bogon's answer is the SDK's own, every member present, and keeps its empty asn.type.
+func TestABogonKeepsItsASType(t *testing.T) {
+	bogon := `{"ip":"10.0.0.1","is_vpn":false,"is_bogon":true,"asn":{"asn":0,"name":"","type":""}}`
+	if got := renderResult(t, FormatJSONL, Opts{}, bogon); !strings.Contains(got, `"type":""`) {
+		t.Errorf("a bogon lost its asn.type: %s", got)
+	}
 }
