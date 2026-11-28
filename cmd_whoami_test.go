@@ -96,7 +96,7 @@ func TestWhoamiSaysWhenAFreeKeysDayResets(t *testing.T) {
 			`"plan":{"key":"free","name":"Free","tier":"free"},"usage":{"requests":`+requests+
 			`,"quota":100,"hard_limit":null,"window_start":"2099-11-11T00:00:00Z",`+
 			`"window_end":"2099-11-12T00:00:00Z"}}`)
-		want := "\npast it      lookups answer with the core fields until they reset\n" +
+		want := "\npast it      lookups answer with the basics, no VPN flag, until they reset\n" +
 			"resets       2099-11-12T00:00:00Z (in "
 		if !strings.Contains(out, want) || strings.Contains(out, "trial") {
 			t.Errorf("%s of 100: want %q, and no trial:\n%s", requests, want, out)
@@ -108,7 +108,7 @@ func TestWhoamiSaysWhenAFreeKeysDayResets(t *testing.T) {
 // past it gets; with no limit, requests past the quota are billed as overage.
 func TestWhoamiSaysWhatHappensPastTheHardLimit(t *testing.T) {
 	for _, c := range []struct{ limit, want, notWant string }{
-		{"100", "hard limit   100\npast it      lookups answer with the core fields, unbilled, " +
+		{"100", "hard limit   100\npast it      lookups answer with the basics and VPN flag, unbilled, " +
 			"until usage resets\n", "billed as overage"},
 		{"null", "hard limit   none; requests above the quota are billed as overage\n", "past it"},
 	} {

@@ -111,14 +111,14 @@ func cmdWhoami() error {
 	// and its key never is, which is why the key alone decides the free plan's lines.
 	fmt.Printf("\nplan         %s\n", acct.Plan.Name)
 	if acct.Plan.Key == freePlanKey {
-		// The free plan: the core fields on every lookup, and every field on the quota's worth each
-		// UTC day, the usage window. Nothing refuses past it.
+		// The free plan: every field on the quota's worth of lookups each UTC day, the usage window,
+		// and the basics, without the VPN flag, past it. Nothing refuses past it.
 		fmt.Printf("every field  %s of %s lookups today\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		fmt.Printf("past it      lookups answer with the core fields until they reset\n")
+		fmt.Printf("past it      lookups answer with the basics, no VPN flag, until they reset\n")
 		fmt.Printf("resets       %s (%s)\n",
 			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
 		return nil
@@ -135,9 +135,9 @@ func cmdWhoami() error {
 		fmt.Printf("hard limit   none; requests above the quota are billed as overage\n")
 	} else {
 		// The quota while overage is off, the default, or the overage cap set in Billing: past
-		// either, a lookup is answered with the core fields and cap_reached, and not billed.
+		// either, a lookup is answered with the basics, the VPN flag and cap_reached, and not billed.
 		fmt.Printf("hard limit   %s\n", humanCount(*acct.Usage.HardLimit))
-		fmt.Printf("past it      lookups answer with the core fields, unbilled, until usage resets\n")
+		fmt.Printf("past it      lookups answer with the basics and VPN flag, unbilled, until usage resets\n")
 	}
 	fmt.Printf("resets       %s (%s)\n",
 		acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))

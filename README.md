@@ -286,7 +286,7 @@ fields       max tier
 used         412,908 of 1,000,000
              [################                        ] 41.3%
 hard limit   1,000,000
-past it      lookups answer with the core fields, unbilled, until usage resets
+past it      lookups answer with the basics and VPN flag, unbilled, until usage resets
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
 
@@ -368,7 +368,7 @@ A paid plan also says whether the address is a mobile carrier's or a satellite l
 
 **A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
 
-On a free key, each answer carries `trial_expired`: `false` for each day's first lookups, which answer every field, and `true` once they're spent and the answer has the core fields alone. `vpndetection whoami` shows how many are left today. A paid key's answers carry `cap_reached` instead, `true` once your organization's overage cap is reached and the answer has the core fields alone, which isn't billed.
+On a free key, each answer carries `trial_expired`: `false` for each day's first lookups, which answer every field, and `true` once they're spent and the answer has the basics alone, without `is_vpn`. `vpndetection whoami` shows how many are left today. A paid key's answers carry `cap_reached` instead, `true` once your organization's overage cap is reached and the answer has the basics and `is_vpn` alone, which isn't billed.
 
 ## Caching
 
