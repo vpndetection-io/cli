@@ -2,6 +2,13 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.17.3 - 2026-11-28
+
+### Fixes
+
+- Take sdk-go v5.24.0 ([`13c7cc8`](https://github.com/vpndetection-io/cli/commit/13c7cc828d9a4fb1ff0f67e7560da96c3414accb))
+- A served empty AS type prints as served, one left out as absent ([`18e3d48`](https://github.com/vpndetection-io/cli/commit/18e3d48bcfb60cd26cd5d1013370368efc8c7a99))
+
 ## 1.17.2 - 2026-11-27
 
 ### Fixes
