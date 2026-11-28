@@ -2,6 +2,13 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff. Releases before 1.3.2 are described by the commits between their tags.
 
+## 1.17.4 - 2026-11-28
+
+### Fixes
+
+- Describe the free plan as it answers, a day at a time ([`fa7dab7`](https://github.com/vpndetection-io/cli/commit/fa7dab7ee2fcb132c8ed0e3d07248722e75a53dd))
+- Send no more lookups once a keyless day is spent ([`121ca90`](https://github.com/vpndetection-io/cli/commit/121ca903105a7cd1e82887d6bd6aca47f01f697f))
+
 ## 1.17.3 - 2026-11-28
 
 ### Fixes
