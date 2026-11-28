@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync/atomic"
 	"time"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
@@ -26,6 +27,8 @@ type Client struct {
 	api   *vpndetection.Client
 	cache *Cache
 	key   string
+	// spent is the refusal of a spent allowance, which answers every later lookup unsent.
+	spent atomic.Pointer[vpndetection.Error]
 }
 
 // NewClient builds the client the current invocation should use.
@@ -112,7 +115,7 @@ func (a Answer) Shown() lib.Served {
 }
 
 // heldMembers names each member sdk-go keeps a plain value until its next major
-// although Unlimited leaves it out, asn.type, as a condition for
+// although a core answer leaves it out, asn.type, as a condition for
 // middleware.MissingMembers, the SDK's one public reader of what the wire left
 // out.
 var heldMembers = middleware.Conditions{{
@@ -136,7 +139,7 @@ func unservedIn(r *vpndetection.Result) []string {
 // duplicates collapsed, a failing address carrying its error rather than
 // failing the batch - so nothing here re-implements concurrency. POST /batch
 // needs a paid plan, so without a key each address is its own lookup
-// (lookupEach), and so it is for a key on the free plan, Unlimited, whose
+// (lookupEach), and so it is for a key on the free plan, whose
 // batch of more than one address the API answers 402.
 //
 // A non-empty agent is a visitor's User-Agent, sent with every address, and an
@@ -195,9 +198,10 @@ func (c *Client) LookupBatch(
 }
 
 // lookupEach answers addresses one GET each, at the batch width, for a caller
-// whose batch is refused: no key, or a key on the free plan. Past the API's
-// rate for Unlimited, a lookup is answered 429 with Retry-After, which the SDK
-// waits out and retries.
+// whose batch is refused: no key, or a key on the free plan. A 429 with
+// Retry-After is the free rate, which the SDK waits out and retries; one without
+// is a spent allowance, a keyless day's, which it never retries, and which
+// answers every address after it without a request.
 func (c *Client) lookupEach(
 	ctx context.Context, ips []string, agent string,
 ) map[string]vpndetection.BatchResult {
@@ -206,7 +210,15 @@ func (c *Client) lookupEach(
 	group.SetLimit(resolveConcurrency())
 	for i, ip := range ips {
 		group.Go(func() error {
+			if spent := c.spent.Load(); spent != nil {
+				answers[i] = vpndetection.BatchResult{Err: spent}
+				return nil
+			}
 			r, err := c.api.Lookup(ctx, ip, vpndetection.UserAgent(agent))
+			var apiErr *vpndetection.Error
+			if errors.As(err, &apiErr) && apiErr.Kind == vpndetection.KindQuotaExceeded {
+				c.spent.Store(apiErr)
+			}
 			answers[i] = vpndetection.BatchResult{Result: r, Err: err}
 			return nil
 		})
@@ -288,6 +300,9 @@ func explain(err error) error {
 	case vpndetection.KindUnauthorized:
 		return fmt.Errorf("%w\nthe API key was not accepted; check `%s whoami`", err, progBase)
 	case vpndetection.KindQuotaExceeded:
+		if key, _ := gConfig.ResolveKey(); key == "" {
+			return fmt.Errorf("%w\n`%s signup` creates a free account and signs this machine in", err, progBase)
+		}
 		return fmt.Errorf("%w\nsee `%s whoami` for the allowance and when it resets", err, progBase)
 	case vpndetection.KindRateLimited:
 		return fmt.Errorf("%w\nslow down, or lower --concurrency", err)

@@ -27,6 +27,23 @@ func TestExplainLeavesALookup403ToTheAPI(t *testing.T) {
 	}
 }
 
+// A spent allowance without a key is a spent keyless day, which `whoami` cannot show, since it
+// needs a key: the hint names signing up instead.
+func TestExplainSendsASpentKeylessCallerToSignUp(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	saved := gConfig
+	t.Cleanup(func() { gConfig = saved })
+	gConfig = NewConfig()
+
+	err := &vpndetection.Error{Kind: vpndetection.KindQuotaExceeded, Message: "used up", StatusCode: 429}
+	want := err.Error() + "\n`" + progBase + " signup` creates a free account and signs this machine in"
+	if got := explain(err).Error(); got != want {
+		t.Errorf("explain = %q, want %q", got, want)
+	}
+}
+
 // A database call's license 403 keeps a hint saying where to see what the
 // organization holds.
 func TestExplainDatabaseNamesTheLicenseOnA403(t *testing.T) {

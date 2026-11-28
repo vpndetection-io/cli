@@ -286,9 +286,9 @@ func TestLookupsWithoutAKeyRunAtTheConcurrency(t *testing.T) {
 	}
 }
 
-// A Trial key, an org on no paid plan, may not batch more than one address: the API answers 402 for
+// A free key, an org on no paid plan, may not batch more than one address: the API answers 402 for
 // each, and the CLI looks each up on its own instead, answering every one.
-func TestATrialKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
+func TestAFreeKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
 	var batches, gets atomic.Int32
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -306,7 +306,7 @@ func TestATrialKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
 	t.Cleanup(api.Close)
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("VPNDETECTION_API_KEY", "trial-key")
+	t.Setenv("VPNDETECTION_API_KEY", "free-key")
 	t.Setenv("VPNDETECTION_SESSION", "")
 	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
 	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
@@ -330,6 +330,51 @@ func TestATrialKeysRefusedBatchIsLookedUpOneByOne(t *testing.T) {
 	}
 	if lines != len(addrs) {
 		t.Errorf("wrote %d answer(s), want %d", lines, len(addrs))
+	}
+}
+
+// Past its address's day a lookup without a key is answered 429 with no Retry-After, which the SDK
+// never retries, and every address after it would be refused the same way, so none is sent: each
+// carries the API's message, which names where to get a free key.
+func TestASpentKeylessDaySendsNoMoreLookups(t *testing.T) {
+	const spent = "lookups without an API key are used up for today; a free key answers on: " +
+		"https://app.vpndetection.io/auth/signup"
+	var gets atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gets.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = fmt.Fprintf(w, `{"error": %q}`, spent)
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache, savedWidth := gConfig, fBaseURL, fNoCache, fConcurrency
+	t.Cleanup(func() {
+		gConfig, fBaseURL, fNoCache, fConcurrency = savedConfig, savedBaseURL, savedNoCache, savedWidth
+	})
+	gConfig, fBaseURL, fNoCache, fConcurrency = NewConfig(), api.URL, true, 1
+
+	addrs := []string{"9.2.0.1", "9.2.0.2", "9.2.0.3"}
+	out, err := captureStdout(t, func() error {
+		return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
+	})
+	if err != errUnanswered {
+		t.Errorf("runLookup = %v, want errUnanswered", err)
+	}
+	if g := gets.Load(); g != 1 {
+		t.Errorf("sent %d lookup(s), want 1: none after the day was spent, and that one never retried", g)
+	}
+	lines := 0
+	for scanner := bufio.NewScanner(out); scanner.Scan(); lines++ {
+		if !strings.Contains(scanner.Text(), "quota_exceeded (HTTP 429): "+spent) {
+			t.Errorf("wrote %s, want the API's message", scanner.Text())
+		}
+	}
+	if lines != len(addrs) {
+		t.Errorf("wrote %d line(s), want one for each of %d", lines, len(addrs))
 	}
 }
 
@@ -463,7 +508,7 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 	}
 }
 
-// Unlimited's answer leaves the AS's type out, which sdk-go reads as "" until its
+// A core answer leaves the AS's type out, which sdk-go reads as "" until its
 // next major: every lookup prints it absent, the one served from the cache too,
 // while a paid answer's "" for an address no AS announces stays "", and a bogon's,
 // which the SDK answers itself, keeps its own.
