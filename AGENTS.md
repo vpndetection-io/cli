@@ -25,7 +25,7 @@ pinned in `config_test.go` instead, because every test here passes on a
 one-character fingerprint - the two keys they sample differ at any width.
 
 **An `asn.type` the answer left out is absent, a served `""` is not** (1.17.3):
-sdk-go keeps `Asn.Type` a plain string until its next major, so Unlimited's
+sdk-go keeps `Asn.Type` a plain string until its next major, so a core
 answer reads `""` there. Its one public reader of what the wire left out is
 `middleware.MissingMembers`, here on `heldMembers`, and it knows only on the
 Result it decoded, so `Answer.Unserved` is recorded at fetch time, the cache

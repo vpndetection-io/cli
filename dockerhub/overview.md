@@ -10,7 +10,7 @@ The full guide is at [docs.vpndetection.io/integrations/cli](https://docs.vpndet
 docker run --rm vpndetection/cli 146.70.116.130
 ```
 
-No key is needed, since the free plan answers any address. Pass yours from the environment for every field your plan includes:
+No key is needed to try it, and a free key answers more. Pass yours from the environment for every field your plan includes:
 
 ```bash
 docker run --rm -e VPNDETECTION_API_KEY vpndetection/cli 146.70.116.130

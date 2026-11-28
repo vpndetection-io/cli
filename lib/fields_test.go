@@ -111,7 +111,7 @@ func TestPresentOrder(t *testing.T) {
 	}
 }
 
-// freeKeyAnswer is what Unlimited serves since 2026-11-20: Tor, relay and anycast
+// freeKeyAnswer is the core answer since 2026-11-20: Tor, relay and anycast
 // beside the VPN flag, the location and AS, and the hostname, empty where the
 // address has none.
 const freeKeyAnswer = `{

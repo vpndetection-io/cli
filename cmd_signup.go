@@ -45,10 +45,11 @@ Description:
   your API keys this machine should hold, and nothing is typed or pasted here.
   If no browser opens, both URLs are printed.
 
-  You do not need an account to use this tool: Unlimited, the free plan, with a
-  key or without one, answers whether an address is a VPN, a Tor node, a relay
-  or anycast, where it is, its AS and its hostname, with no cap. A free account
-  also tries every field, and a paid plan answers them all.
+  You do not need an account to try this tool: without a key, the free plan
+  answers a number of lookups a day, each saying whether an address is a VPN, a
+  Tor node, a relay or anycast, where it is, its AS and its hostname. A free
+  account's key answers those fields for every lookup and every field for each
+  day's first lookups, and a paid plan answers them all.
 
 Options:
   --no-browser

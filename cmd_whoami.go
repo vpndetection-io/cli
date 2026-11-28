@@ -23,9 +23,9 @@ Description:
 
   Usage counts against the anniversary of your subscription, not the calendar
   month and not the billing period, and it is the same number a lookup is
-  gated on. It can lag a few seconds behind what you have just sent. With no
-  subscription it counts the free trial's lookups instead, and the trial ends
-  once rather than resetting.
+  gated on. It can lag a few seconds behind what you have just sent. On the
+  free plan it counts today's lookups with every field instead, which reset at
+  midnight UTC.
 
 Examples:
   $ %[1]s whoami
@@ -69,9 +69,10 @@ func cmdWhoami() error {
 			return fmt.Errorf("not authenticated; run `%s login`, or set VPNDETECTION_API_KEY", progBase)
 		}
 		fmt.Println("not authenticated")
-		fmt.Println("\nLookups still work: they answer VPN, Tor, relay, anycast, location, asn and hostname,",
-			"with no daily cap.")
-		fmt.Printf("Run `%s login` to use a key, or `%s signup` to create an account.\n", progBase, progBase)
+		fmt.Println("\nLookups work without a key, a number a day: they answer VPN, Tor, relay, anycast,")
+		fmt.Println("location, asn and hostname. A free key answers those for every lookup, and every")
+		fmt.Println("field for each day's first lookups.")
+		fmt.Printf("Run `%s login` to use a key, or `%s signup` to create a free account.\n", progBase, progBase)
 		return nil
 	}
 
@@ -110,24 +111,16 @@ func cmdWhoami() error {
 	// and its key never is, which is why the key alone decides the free plan's lines.
 	fmt.Printf("\nplan         %s\n", acct.Plan.Name)
 	if acct.Plan.Key == freePlanKey {
-		// The free plan, Unlimited: every lookup is answered with no cap, and those of its trial with
-		// every field, the usage window from the org's first lookup and the quota bounding it. The trial
-		// ends once, at either bound, and never resets. Nothing refuses past it.
-		fmt.Printf("every field  %s of %s lookups\n",
+		// The free plan: the core fields on every lookup, and every field on the quota's worth each
+		// UTC day, the usage window. Nothing refuses past it.
+		fmt.Printf("every field  %s of %s lookups today\n",
 			humanCount(acct.Usage.Requests), humanCount(acct.Usage.Quota))
 		if acct.Usage.Quota > 0 {
 			fmt.Printf("             %s\n", usageBar(acct.Usage.Requests, acct.Usage.Quota))
 		}
-		switch {
-		case !acct.Usage.WindowEnd.After(time.Now()):
-			fmt.Printf("trial ended  %s\n", acct.Usage.WindowEnd.Format(time.RFC3339))
-		case acct.Usage.Quota > 0 && acct.Usage.Requests >= acct.Usage.Quota:
-			fmt.Printf("trial ended  its lookups are spent\n")
-		default:
-			fmt.Printf("until        %s (%s)\n",
-				acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
-		}
-		fmt.Printf("past it      lookups answer with %s's fields\n", acct.Plan.Name)
+		fmt.Printf("past it      lookups answer with the core fields until they reset\n")
+		fmt.Printf("resets       %s (%s)\n",
+			acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))
 		return nil
 	}
 	fmt.Printf("fields       %s tier\n", acct.Plan.Tier)
@@ -142,9 +135,9 @@ func cmdWhoami() error {
 		fmt.Printf("hard limit   none; requests above the quota are billed as overage\n")
 	} else {
 		// The quota while overage is off, the default, or the overage cap set in Billing: past
-		// either, a lookup is answered with Unlimited's fields and cap_reached, and not billed.
+		// either, a lookup is answered with the core fields and cap_reached, and not billed.
 		fmt.Printf("hard limit   %s\n", humanCount(*acct.Usage.HardLimit))
-		fmt.Printf("past it      lookups answer with Unlimited's fields, unbilled, until usage resets\n")
+		fmt.Printf("past it      lookups answer with the core fields, unbilled, until usage resets\n")
 	}
 	fmt.Printf("resets       %s (%s)\n",
 		acct.Usage.WindowEnd.Format(time.RFC3339), until(acct.Usage.WindowEnd))

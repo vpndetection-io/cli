@@ -63,11 +63,11 @@ var Columns = []string{
 	"location.flag_emoji", "location.flag_unicode",
 	"asn.asn", "asn.name", "asn.domain", "asn.type", "asn.prefix",
 
-	// On a free-plan key's answers alone: false for its trial's lookups with
-	// every field, true once they are spent and the answer is Unlimited's.
+	// On a free-plan key's answers alone: false for the day's lookups with every
+	// field, true once they are spent and the answer has the core fields.
 	"trial_expired",
 	// On a paid key's answers alone: false while the answer has every field, true
-	// once its organization's overage cap is reached and the answer is Unlimited's.
+	// once its organization's overage cap is reached and the answer has the core fields.
 	"cap_reached",
 
 	// The services, carrier and satellite flags, each detail, and who uses and
@@ -94,7 +94,7 @@ var Columns = []string{
 	"abuse.email", "abuse.name", "abuse.phone", "abuse.address", "abuse.country", "abuse.network",
 	"abuse.validated", "abuse.unvalidated_since",
 
-	// Only to a lookup that sent a visitor's agent, on a paid plan or the trial,
+	// Only to a lookup that sent a visitor's agent, on a paid plan or a full free answer,
 	// from 1.17.0: the agent it names, its kind, and whether the address bears it out.
 	"user_agent.agent", "user_agent.kind", "user_agent.verdict",
 }
@@ -162,8 +162,8 @@ func asTree(v any) (map[string]any, error) {
 }
 
 // Served is an answer with the members it left out although its Go type cannot
-// say so: sdk-go keeps asn.type a plain string until its next major, so on
-// Unlimited it reads "". Its JSON, which every format reads an answer through,
+// say so: sdk-go keeps asn.type a plain string until its next major, so in a
+// core answer it reads "". Its JSON, which every format reads an answer through,
 // leaves each of Unserved's dotted paths out, so they print as absent, as any
 // field the plan does not include does, while a paid answer's "" stays "".
 type Served struct {

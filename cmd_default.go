@@ -25,10 +25,11 @@ Description:
   place of an answer (on standard error with --csv), and the command then
   exits 1.
 
-  It works with no account at all: a lookup answers whether the address is a
-  VPN, a Tor node, a relay or anycast, with its location, asn and hostname,
-  with no daily cap. A paid plan answers every field and looks addresses up in
-  batches, and a new account can try every field.
+  It works with no account at all, for a number of lookups a day: each answers
+  whether the address is a VPN, a Tor node, a relay or anycast, with its
+  location, asn and hostname. A free account's key answers those for every
+  lookup and every field for each day's first lookups, and a paid plan answers
+  every field and looks addresses up in batches.
 
 Examples:
   # One address.
@@ -75,10 +76,10 @@ Options:
     --retries <n>
       retries per request.
     --user-agent <agent>
-      a visitor's User-Agent, sent with every address. On a paid plan or the
-      trial, each answer's user_agent then names the agent, its kind, and
-      whether this address bears it out: verified, spoofed, unverifiable or
-      not_bot.
+      a visitor's User-Agent, sent with every address. On a paid plan, or in a
+      free key's answers with every field, each answer's user_agent then names
+      the agent, its kind, and whether this address bears it out: verified,
+      spoofed, unverifiable or not_bot.
     --version, -v, --vsn
       print the version.
     --help, -h

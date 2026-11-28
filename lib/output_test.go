@@ -79,7 +79,7 @@ func TestCSVHeaderIsFixed(t *testing.T) {
 // trial_expired and cap_reached keep their columns, the last in 1.14.0 and 11
 // further right from 1.16.0's bot ones, and the readable block prints each after the
 // answer's fields, hostname and web included, where a user reads whether the
-// answer is Unlimited's: a trial key's because the trial is spent, a paid key's
+// answer has the core fields alone: a free key's because its day's are spent, a paid key's
 // because its organization's overage cap is reached. An answer carries at most
 // one of the two, so prints at most one.
 func TestPlanStateComesLast(t *testing.T) {
@@ -573,7 +573,7 @@ func keys(m map[string]any) []string {
 	return out
 }
 
-// An answer on Unlimited carries no asn.type, which the SDK's Asn holds as a plain
+// A core answer carries no asn.type, which the SDK's Asn holds as a plain
 // string until its next major, so it reads "" there: every format leaves out what
 // Served names, as it does any field the plan does not include, and keeps a type
 // that was served, a paid answer's "" for an address no AS announces included.

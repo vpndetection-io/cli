@@ -11,7 +11,7 @@ Look up what an IP address is - a VPN exit, a hosting or CDN range, a bot, a Tor
 
 ## Getting Started
 
-No account is needed to start: Unlimited, the free plan, answers any address with no cap, with a key or without one: whether it is a VPN, a Tor node, a relay or anycast, where it is, the AS that announces it and its hostname, one address per request. A paid plan answers all our data fields and looks addresses up in batches of up to 1,000, and a free account tries every field.
+No account is needed to try it: without a key, the free plan answers a number of lookups a day, each saying whether the address is a VPN, a Tor node, a relay or anycast, where it is, the AS that announces it and its hostname, one address per request. A free key answers those fields for every lookup and every field for each day's first lookups. A paid plan answers every field and looks addresses up in batches of up to 1,000. See the [plans](https://vpndetection.io/pricing).
 
 ### macOS
 
@@ -227,7 +227,7 @@ Output formats are `--pretty`, `--json`, `--jsonl`, `--csv` and `--yaml`.
 
 ### Crawler verification
 
-`--user-agent` sends a visitor's User-Agent with every address, and on a paid plan or the trial each answer's `user_agent` names the agent, its kind, and whether this address bears it out: `verified`, `spoofed`, `unverifiable` or `not_bot`. So a request claiming to be Googlebot can be checked against the address it came from:
+`--user-agent` sends a visitor's User-Agent with every address, and on a paid plan or a free key's answers with every field, each answer's `user_agent` names the agent, its kind, and whether this address bears it out: `verified`, `spoofed`, `unverifiable` or `not_bot`. So a request claiming to be Googlebot can be checked against the address it came from:
 
 ```console
 $ vpndetection bulk 66.249.66.1 146.70.116.130 -f ip,user_agent --csv \
@@ -286,11 +286,11 @@ fields       max tier
 used         412,908 of 1,000,000
              [################                        ] 41.3%
 hard limit   1,000,000
-past it      lookups answer with Unlimited's fields, unbilled, until usage resets
+past it      lookups answer with the core fields, unbilled, until usage resets
 resets       2026-10-04T07:00:00Z (in 20d)
 ```
 
-With overage turned on in Billing, `hard limit` is your overage cap, or `none` with no cap, and lookups past the quota are billed as overage. Also spelled `entitlement`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on. With no subscription, `whoami` shows the free trial instead: how many lookups it has answered with every field, and until when it lasts. It ends once rather than resetting, and `trial ended` says when it did.
+With overage turned on in Billing, `hard limit` is your overage cap, or `none` without one, and lookups past the quota are billed as overage. Also spelled `entitlement`. Usage counts against the anniversary of your subscription, not the calendar month and not the billing period, and it is the same number a lookup is gated on. On the free plan, `whoami` shows today's lookups with every field instead, out of how many each day gets, and when they reset.
 
 ### Databases
 
@@ -362,17 +362,17 @@ How much you get back per lookup depends on the plan behind your key. See the [p
 
 A paid plan names whose bot uses an address `is_bot` flags: its operator, its user agents, what they do and whether the operator vouches for it. In CSV `is_bot` follows `is_cdn`, and the `bot` columns follow the `cdn` ones.
 
-A lookup sent with `--user-agent` gets `user_agent` on a paid plan or the trial: the agent it names, its kind and whether the address bears it out. Its three columns are CSV's last, and empty for a lookup sent without one.
+A lookup sent with `--user-agent` gets `user_agent` on a paid plan or in a free key's answers with every field: the agent it names, its kind and whether the address bears it out. Its three columns are CSV's last, and empty for a lookup sent without one.
 
 A paid plan also says whether the address is a mobile carrier's or a satellite link's and whether it runs SSH, SMTP, a web server, an open DNS resolver or BitTorrent, each with its detail, plus its city, the company using it and its abuse contact. In CSV these columns come after `cap_reached`, so no earlier column moves, and `web` is one column holding its list as JSON.
 
 **A field your plan does not include is missing from the answer, not `false`.** `is_tor` absent means we did not check; `is_tor: false` means we checked and it is not a Tor node. The readable output prints only what you were served; CSV writes an empty cell for absent and the literal `false` for false. `--show-absent` renders the lot.
 
-On a key with no paid plan, each answer carries `trial_expired`: `false` while the free trial lasts, `true` once it's spent and the answer is Unlimited's. `vpndetection whoami` shows how far into it you are. A paid key's answers carry `cap_reached` instead, `true` once your organization's overage cap is reached and the answer is Unlimited's, which isn't billed.
+On a free key, each answer carries `trial_expired`: `false` for each day's first lookups, which answer every field, and `true` once they're spent and the answer has the core fields alone. `vpndetection whoami` shows how many are left today. A paid key's answers carry `cap_reached` instead, `true` once your organization's overage cap is reached and the answer has the core fields alone, which isn't billed.
 
 ## Caching
 
-Answers are cached on disk, so looking the same address up twice costs one request rather than two. An answer with `trial_expired` or `cap_reached` set to `true` isn't cached, so once you subscribe or your cap is raised the next lookup gets every field.
+Answers are cached on disk, so looking the same address up twice costs one request rather than two. An answer with `trial_expired` or `cap_reached` set to `true` isn't cached, so once the day's lookups with every field reset, you subscribe or your cap is raised, the next lookup gets every field.
 
 ```bash
 vpndetection cache info
