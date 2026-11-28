@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 
 	iputil "github.com/mslmio/libgo-iputil"
-	vpndetection "github.com/vpndetection-io/sdk-go/v5"
 
 	"github.com/vpndetection-io/cli/lib"
 )
@@ -110,7 +109,7 @@ func runLookup(ctx context.Context, args []string, opts lookupOpts) error {
 				}
 				continue
 			}
-			if err := writer.Write(ip, answer.Result); err != nil {
+			if err := writer.Write(ip, answer.Shown()); err != nil {
 				return err
 			}
 		}
@@ -170,7 +169,7 @@ var errNoInput = errors.New("no addresses in input")
 var errUnanswered = errors.New("not every address was answered")
 
 // writeOne renders one answer in the chosen format.
-func writeOne(ip string, result *vpndetection.Result, opts lookupOpts) error {
+func writeOne(ip string, answer Answer, opts lookupOpts) error {
 	format := opts.format
 	if format == "" {
 		format = lib.Format(gConfig.Format)
@@ -183,7 +182,7 @@ func writeOne(ip string, result *vpndetection.Result, opts lookupOpts) error {
 		ShowAbsent: opts.showAbsent,
 		Color:      !color.NoColor,
 	})
-	if err := w.Write(ip, result); err != nil {
+	if err := w.Write(ip, answer.Shown()); err != nil {
 		return err
 	}
 	return w.Close()

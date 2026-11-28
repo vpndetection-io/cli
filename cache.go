@@ -40,6 +40,8 @@ type entry struct {
 	Created time.Time `json:"c"`
 	// Result is the answer exactly as the SDK returned it.
 	Result *vpndetection.Result `json:"r"`
+	// Unserved is what the answer left out that Result cannot show as absent.
+	Unserved []string `json:"u,omitempty"`
 }
 
 // CachePath is the cache database file.
@@ -101,7 +103,7 @@ func (c *Cache) Close() error {
 
 // Get returns a cached answer to a lookup of ip sending agent, or nil when there
 // is none or it has expired.
-func (c *Cache) Get(ip, agent string) *vpndetection.Result {
+func (c *Cache) Get(ip, agent string) *Answer {
 	if c == nil {
 		return nil
 	}
@@ -131,7 +133,7 @@ func (c *Cache) Get(ip, agent string) *vpndetection.Result {
 		// behind the one lock bbolt has. Sweep handles removal.
 		return nil
 	}
-	return found.Result
+	return &Answer{Result: found.Result, Unserved: found.Unserved}
 }
 
 // PutBatch stores many answers to lookups sending agent in one transaction,
@@ -143,7 +145,7 @@ func (c *Cache) Get(ip, agent string) *vpndetection.Result {
 // bbolt starts a new mmap-backed write transaction per Update, so a bulk run
 // doing one per address is dominated by transaction overhead rather than by the
 // writes.
-func (c *Cache) PutBatch(results map[string]*vpndetection.Result, agent string) {
+func (c *Cache) PutBatch(results map[string]Answer, agent string) {
 	if c == nil || len(results) == 0 {
 		return
 	}
@@ -153,11 +155,11 @@ func (c *Cache) PutBatch(results map[string]*vpndetection.Result, agent string) 
 		if b == nil {
 			return nil
 		}
-		for ip, result := range results {
-			if result == nil || reduced(result) {
+		for ip, answer := range results {
+			if answer.Result == nil || reduced(answer.Result) {
 				continue
 			}
-			raw, err := json.Marshal(entry{Created: now, Result: result})
+			raw, err := json.Marshal(entry{Created: now, Result: answer.Result, Unserved: answer.Unserved})
 			if err != nil {
 				continue
 			}

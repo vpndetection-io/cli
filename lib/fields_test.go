@@ -321,10 +321,6 @@ func fill(v reflect.Value) {
 	case reflect.Pointer:
 		v.Set(reflect.New(v.Type().Elem()))
 		fill(v.Elem())
-	case reflect.String:
-		// A served answer's every string, asn.type's included, which reads as
-		// not served when it is empty.
-		v.SetString("x")
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
 			if v.Field(i).CanSet() {

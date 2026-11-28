@@ -150,7 +150,7 @@ func Flatten(v any) (Record, error) {
 // format reads the answer through it, so each one carries the API's keys and
 // nesting whatever Go type the answer arrived in.
 func asTree(v any) (map[string]any, error) {
-	raw, err := answerJSON(v)
+	raw, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
@@ -161,45 +161,39 @@ func asTree(v any) (map[string]any, error) {
 	return tree, nil
 }
 
-// answerJSON is an answer's JSON, in the order the SDK's type writes it, less
-// an asn.type of "": the SDK's Asn holds the AS's type as a plain string until
-// its next major, so an answer that left it out, Unlimited's, reads "" there,
-// which the SDK documents as not in the plan. Kept, it would print as a value.
-// A bogon's answer is the SDK's own, in the widest shape, and keeps it.
-func answerJSON(v any) ([]byte, error) {
-	raw, err := json.Marshal(v)
+// Served is an answer with the members it left out although its Go type cannot
+// say so: sdk-go keeps asn.type a plain string until its next major, so on
+// Unlimited it reads "". Its JSON, which every format reads an answer through,
+// leaves each of Unserved's dotted paths out, so they print as absent, as any
+// field the plan does not include does, while a paid answer's "" stays "".
+type Served struct {
+	Answer   any
+	Unserved []string
+}
+
+// MarshalJSON is Answer's JSON less each path in Unserved.
+func (s Served) MarshalJSON() ([]byte, error) {
+	raw, err := json.Marshal(s.Answer)
 	if err != nil {
 		return nil, err
 	}
-	var answer struct {
-		IsBogon bool `json:"is_bogon"`
+	for _, path := range s.Unserved {
+		if raw, err = without(raw, strings.Split(path, ".")); err != nil {
+			return nil, err
+		}
 	}
-	if json.Unmarshal(raw, &answer) == nil && answer.IsBogon {
-		return raw, nil
-	}
-	return withMember(raw, "asn", func(asn json.RawMessage) (json.RawMessage, error) {
-		return withMember(asn, "type", func(t json.RawMessage) (json.RawMessage, error) {
-			if string(t) == `""` {
-				return nil, nil
-			}
-			return t, nil
-		})
-	})
+	return raw, nil
 }
 
-// withMember is the JSON object raw with its member name replaced by what edit
-// returns for it, or left out where edit returns nil, every other member kept
-// in its place. Anything but an object, or one without that member, is raw.
-func withMember(
-	raw json.RawMessage, name string, edit func(json.RawMessage) (json.RawMessage, error),
-) (json.RawMessage, error) {
+// without is the JSON object raw less the member at path, every other member
+// kept in its place. Anything but an object, or one without that member, is raw.
+func without(raw json.RawMessage, path []string) (json.RawMessage, error) {
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	if open, err := decoder.Token(); err != nil || open != json.Delim('{') {
 		return raw, nil
 	}
 	var out bytes.Buffer
 	out.WriteByte('{')
-	found := false
 	for decoder.More() {
 		key, err := decoder.Token()
 		if err != nil {
@@ -209,13 +203,12 @@ func withMember(
 		if err := decoder.Decode(&value); err != nil {
 			return nil, err
 		}
-		if key == name {
-			found = true
-			if value, err = edit(value); err != nil {
-				return nil, err
-			}
-			if value == nil {
+		if key == path[0] {
+			if len(path) == 1 {
 				continue
+			}
+			if value, err = without(value, path[1:]); err != nil {
+				return nil, err
 			}
 		}
 		if out.Len() > 1 {
@@ -228,9 +221,6 @@ func withMember(
 		out.Write(encoded)
 		out.WriteByte(':')
 		out.Write(value)
-	}
-	if !found {
-		return raw, nil
 	}
 	out.WriteByte('}')
 	return out.Bytes(), nil

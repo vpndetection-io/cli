@@ -58,5 +58,5 @@ func cmdMyIP() error {
 	if err != nil {
 		return explain(err)
 	}
-	return writeOne(result.IP, result, opts)
+	return writeOne(result.IP, Answer{Result: result, Unserved: unservedIn(result)}, opts)
 }

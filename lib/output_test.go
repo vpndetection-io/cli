@@ -574,15 +574,18 @@ func keys(m map[string]any) []string {
 }
 
 // An answer on Unlimited carries no asn.type, which the SDK's Asn holds as a plain
-// string until its next major, so it reads "" there: every format leaves it out, as
-// it does any field the plan does not include, and keeps a type that was served.
-func TestEveryFormatLeavesOutAnASTypeNotServed(t *testing.T) {
+// string until its next major, so it reads "" there: every format leaves out what
+// Served names, as it does any field the plan does not include, and keeps a type
+// that was served, a paid answer's "" for an address no AS announces included.
+func TestEveryFormatLeavesOutWhatTheAnswerLeftOut(t *testing.T) {
 	keyless := `{"ip":"146.70.116.130","is_vpn":true,"is_bogon":false,
 		"asn":{"asn":9009,"name":"M247 Europe SRL","domain":"m247global.com","prefix":"146.70.116.0/24",
 		"country":"RO","rpki_status":"not_found"}}`
 	paid := strings.Replace(keyless, `"prefix"`, `"type":"hosting","prefix"`, 1)
+	unannounced := strings.Replace(keyless, `"prefix"`, `"type":"","prefix"`, 1)
+	unserved := []string{"asn.type"}
 	for _, format := range []Format{FormatJSON, FormatJSONL, FormatYAML, FormatPretty, FormatCSV} {
-		got := renderResult(t, format, Opts{ShowAbsent: true, Fields: []string{"asn"}}, keyless)
+		got := renderServed(t, format, Opts{ShowAbsent: true, Fields: []string{"asn"}}, unserved, keyless)
 		if strings.Contains(got, `"type"`) || strings.Contains(got, "type:") ||
 			strings.Contains(got, "asn.type ") && !regexp.MustCompile(`asn\.type +-`).MatchString(got) {
 			t.Errorf("%s: an unserved asn.type was printed:\n%s", format, got)
@@ -590,17 +593,28 @@ func TestEveryFormatLeavesOutAnASTypeNotServed(t *testing.T) {
 		if !strings.Contains(got, "M247 Europe SRL") {
 			t.Errorf("%s: the AS's name is missing:\n%s", format, got)
 		}
-		if got := renderResult(t, format, Opts{}, keyless); strings.Contains(got, `"type"`) {
+		if got := renderServed(t, format, Opts{}, unserved, keyless); strings.Contains(got, `"type"`) {
 			t.Errorf("%s, no selection: an unserved asn.type was printed:\n%s", format, got)
 		}
-		if got := renderResult(t, format, Opts{}, paid); !strings.Contains(got, "hosting") {
+		if got := renderServed(t, format, Opts{}, nil, paid); !strings.Contains(got, "hosting") {
 			t.Errorf("%s: a served asn.type is missing:\n%s", format, got)
 		}
 	}
+	for _, format := range []Format{FormatJSON, FormatJSONL} {
+		got := renderServed(t, format, Opts{}, nil, unannounced)
+		if !regexp.MustCompile(`"type": ?""`).MatchString(got) {
+			t.Errorf("%s: a served empty asn.type is missing:\n%s", format, got)
+		}
+	}
+	got := renderServed(t, FormatPretty, Opts{ShowAbsent: true, Fields: []string{"asn"}}, nil, unannounced)
+	if regexp.MustCompile(`asn\.type +-`).MatchString(got) {
+		t.Errorf("a served empty asn.type was printed as absent:\n%s", got)
+	}
 }
 
-// renderResult writes each body as the SDK's Result, as the CLI's lookups do.
-func renderResult(t *testing.T, format Format, opts Opts, bodies ...string) string {
+// renderServed writes each body as the SDK's Result less unserved, as the CLI's
+// lookups do.
+func renderServed(t *testing.T, format Format, opts Opts, unserved []string, bodies ...string) string {
 	t.Helper()
 	var out strings.Builder
 	w := NewWriter(&out, format, opts)
@@ -609,7 +623,7 @@ func renderResult(t *testing.T, format Format, opts Opts, bodies ...string) stri
 		if err := json.Unmarshal([]byte(body), &r); err != nil {
 			t.Fatal(err)
 		}
-		if err := w.Write(r.IP, &r); err != nil {
+		if err := w.Write(r.IP, Served{Answer: &r, Unserved: unserved}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -617,12 +631,4 @@ func renderResult(t *testing.T, format Format, opts Opts, bodies ...string) stri
 		t.Fatal(err)
 	}
 	return out.String()
-}
-
-// A bogon's answer is the SDK's own, every member present, and keeps its empty asn.type.
-func TestABogonKeepsItsASType(t *testing.T) {
-	bogon := `{"ip":"10.0.0.1","is_vpn":false,"is_bogon":true,"asn":{"asn":0,"name":"","type":""}}`
-	if got := renderResult(t, FormatJSONL, Opts{}, bogon); !strings.Contains(got, `"type":""`) {
-		t.Errorf("a bogon lost its asn.type: %s", got)
-	}
 }

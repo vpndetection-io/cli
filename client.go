@@ -9,7 +9,10 @@ import (
 	"time"
 
 	vpndetection "github.com/vpndetection-io/sdk-go/v5"
+	"github.com/vpndetection-io/sdk-go/v5/middleware"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/vpndetection-io/cli/lib"
 )
 
 // Client is the SDK client plus this CLI's own disk cache.
@@ -94,6 +97,38 @@ func (c *Client) Close() {
 // HasKey reports whether this invocation is authenticated.
 func (c *Client) HasKey() bool { return c.key != "" }
 
+// Answer is one address's lookup: the SDK's answer, or the error that stands in
+// for it, and the members the answer left out although its Go type cannot say
+// so (unservedIn).
+type Answer struct {
+	Result   *vpndetection.Result
+	Unserved []string
+	Err      error
+}
+
+// Shown is what the writers print of a: its answer, less what it left out.
+func (a Answer) Shown() lib.Served {
+	return lib.Served{Answer: a.Result, Unserved: a.Unserved}
+}
+
+// heldMembers names each member sdk-go keeps a plain value until its next major
+// although Unlimited leaves it out, asn.type, as a condition for
+// middleware.MissingMembers, the SDK's one public reader of what the wire left
+// out.
+var heldMembers = middleware.Conditions{{
+	"asn": middleware.BlockCondition{"type": "any"},
+}}
+
+// unservedIn names the members of heldMembers r's answer left out. The SDK
+// knows only on the Result it decoded: one read back from the cache would name
+// none, so the cache stores them beside it.
+func unservedIn(r *vpndetection.Result) []string {
+	if r == nil {
+		return nil
+	}
+	return middleware.MissingMembers(heldMembers, r)
+}
+
 // LookupBatch classifies many addresses, serving what it can from cache and
 // asking only for the rest.
 //
@@ -111,8 +146,8 @@ func (c *Client) HasKey() bool { return c.key != "" }
 // nothing to recompute and would otherwise take a slot.
 func (c *Client) LookupBatch(
 	ctx context.Context, ips []string, agent string,
-) (map[string]vpndetection.BatchResult, error) {
-	out := make(map[string]vpndetection.BatchResult, len(ips))
+) (map[string]Answer, error) {
+	out := make(map[string]Answer, len(ips))
 	miss := make([]string, 0, len(ips))
 	for _, ip := range ips {
 		if _, done := out[ip]; done {
@@ -123,7 +158,7 @@ func (c *Client) LookupBatch(
 			continue
 		}
 		if hit := c.cache.Get(ip, agent); hit != nil {
-			out[ip] = vpndetection.BatchResult{Result: hit}
+			out[ip] = *hit
 			continue
 		}
 		miss = append(miss, ip)
@@ -145,14 +180,14 @@ func (c *Client) LookupBatch(
 	} else {
 		answers = c.lookupEach(ctx, miss, agent)
 	}
-	fresh := make(map[string]*vpndetection.Result, len(answers))
+	fresh := make(map[string]Answer, len(answers))
 	for ip, answer := range answers {
-		out[ip] = answer
+		out[ip] = Answer{Result: answer.Result, Unserved: unservedIn(answer.Result), Err: answer.Err}
 		// Errors are never cached: a 429 or a dropped connection is a fact
 		// about this moment, and caching it would make the next run report a
 		// failure that is no longer happening.
 		if answer.Err == nil && answer.Result != nil && !answer.Result.IsBogon {
-			fresh[ip] = answer.Result
+			fresh[ip] = out[ip]
 		}
 	}
 	c.cache.PutBatch(fresh, agent)

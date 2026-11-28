@@ -94,8 +94,7 @@ func NewWriter(w io.Writer, f Format, opts Opts) Writer {
 // came when nothing was selected, so that output stays what it always was.
 func selected(v any, fields []string) (any, error) {
 	if len(fields) == 0 {
-		raw, err := answerJSON(v)
-		return json.RawMessage(raw), err
+		return v, nil
 	}
 	tree, err := asTree(v)
 	if err != nil {

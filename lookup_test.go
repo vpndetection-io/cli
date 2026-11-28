@@ -463,6 +463,60 @@ func TestLookupReadsAListAfterAByteOrderMark(t *testing.T) {
 	}
 }
 
+// Unlimited's answer leaves the AS's type out, which sdk-go reads as "" until its
+// next major: every lookup prints it absent, the one served from the cache too,
+// while a paid answer's "" for an address no AS announces stays "", and a bogon's,
+// which the SDK answers itself, keeps its own.
+func TestAnASTypeTheAnswerLeftOutIsAbsentNotEmpty(t *testing.T) {
+	var requests atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		ip := strings.TrimPrefix(r.URL.Path, "/")
+		asn := map[string]any{"asn": 9009, "name": "M247 Europe SRL", "domain": "m247global.com",
+			"prefix": "146.70.116.0/24", "country": "RO", "rpki_status": "not_found"}
+		if ip == "9.1.0.2" {
+			asn["type"] = ""
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ip": ip, "is_vpn": true, "asn": asn})
+	}))
+	t.Cleanup(api.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("VPNDETECTION_API_KEY", "")
+	t.Setenv("VPNDETECTION_SESSION", "")
+	savedConfig, savedBaseURL, savedNoCache := gConfig, fBaseURL, fNoCache
+	t.Cleanup(func() { gConfig, fBaseURL, fNoCache = savedConfig, savedBaseURL, savedNoCache })
+	gConfig, fBaseURL, fNoCache = NewConfig(), api.URL, false
+
+	for _, run := range []string{"fetched", "cached"} {
+		out, err := captureStdout(t, func() error {
+			addrs := []string{"9.1.0.1", "9.1.0.2", "10.0.0.1"}
+			return runLookup(t.Context(), addrs, lookupOpts{format: lib.FormatJSONL})
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		written, err := io.ReadAll(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lines := strings.Split(strings.TrimSpace(string(written)), "\n")
+		if len(lines) != 3 {
+			t.Fatalf("%s: wrote %d line(s), want 3:\n%s", run, len(lines), written)
+		}
+		for _, line := range lines {
+			served := !strings.Contains(line, `"9.1.0.1"`)
+			if got := strings.Contains(line, `"type":""`); got != served {
+				t.Errorf("%s: asn.type printed is %v, want %v:\n%s", run, got, served, line)
+			}
+		}
+	}
+	if n := requests.Load(); n != 2 {
+		t.Errorf("sent %d request(s), want 2: the second run reads the cache", n)
+	}
+}
+
 // captureStdout runs fn with os.Stdout pointed at a file, and returns that file
 // rewound for reading, with fn's error.
 func captureStdout(t *testing.T, fn func() error) (*os.File, error) {

@@ -24,12 +24,15 @@ the base URL, one for every deployment. The `[:12]` is
 pinned in `config_test.go` instead, because every test here passes on a
 one-character fingerprint - the two keys they sample differ at any width.
 
-**An `asn.type` of `""` is absent** (1.17.2): sdk-go keeps `Asn.Type` a plain
-string until its next major, so Unlimited's answer, which leaves it out, reads
-`""`, and `lib.answerJSON`, which every format reads an answer through, drops
-it. The SDK's record of what the wire left out is unexported, and the disk
-cache would lose it anyway, so a paid answer's `""` for an address no AS
-announces reads as absent too.
+**An `asn.type` the answer left out is absent, a served `""` is not** (1.17.3):
+sdk-go keeps `Asn.Type` a plain string until its next major, so Unlimited's
+answer reads `""` there. Its one public reader of what the wire left out is
+`middleware.MissingMembers`, here on `heldMembers`, and it knows only on the
+Result it decoded, so `Answer.Unserved` is recorded at fetch time, the cache
+entry keeps it as `u`, and `lib.Served`'s JSON, which every format reads,
+leaves each path out. 1.17.2 dropped every `""` instead, a paid answer's for an
+address no AS announces included. At v6, when it becomes a pointer, all of it
+goes.
 
 **Bulk is chunked, never collected.** `runLookup` pulls addresses through
 `iputil.WalkAddrs` into batches of 10,000 and emits each batch before reading
