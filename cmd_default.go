@@ -27,9 +27,9 @@ Description:
 
   It works with no account at all, for a number of lookups a day: each answers
   whether the address is a VPN, a Tor node, a relay or anycast, with its
-  location, asn and hostname. A free account's key answers those for every
-  lookup and every field for each day's first lookups, and a paid plan answers
-  every field and looks addresses up in batches.
+  location, asn and hostname. A free account's key answers every field for
+  each day's first lookups and all of those but the VPN flag after them, and a
+  paid plan answers every field and looks addresses up in batches.
 
 Examples:
   # One address.
